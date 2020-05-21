@@ -100,7 +100,7 @@ final class SimpleBlock implements Block {
 
 	public int balanceOf(int id)
 	//@ requires BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
-	//@ ensures BlockInv(p, hp, h, r);
+	//@ ensures BlockInv(p, hp, h, r) &*& result >= 0;
 	{
 		int delta = 0;
 		int i = 0;

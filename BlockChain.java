@@ -76,7 +76,7 @@ final class BlockChain {
 		
 		SummaryBlock b = new SummaryBlock(null, nonce, initial_balances);
 		
-		//@ open validNonce(nonce, 0, sum(vls));
+		//@ open ValidNonce(nonce, 0, sum(vls));
 		//@ open b.BlockInv(null, 0, ?hx, nonce);
 		//@ assert hx % 100 == 0;
 		
@@ -204,17 +204,23 @@ final class BlockChain {
 	{
 		int[] balances = new int[Block.MAX_ID];
 		for(int i = 0; i < Block.MAX_ID; i++) 
-		//@ invariant 0 <= i &*& i <= Block.MAX_ID &*& array_slice(balances,0,balances.length,_) &*& BlockchainInv(h, hx, s, c);
+		/*@ invariant 0 <= i &*& i <= Block.MAX_ID 
+				&*& array_slice_deep(balances, 0, i, Positive, unit, ?elems, ?vls)
+				&*& array_slice(balances,i,balances.length,_) 
+				&*& BlockchainInv(h, hx, s, c);
+		@*/
 		{
 			//@ open BlockchainInv(h, hx, s, c);
 			balances[i] = this.head.balanceOf(i);
+			//@ assert balances[i] >= 0;
 			//@ close BlockchainInv(h, hx, s, c);
 		}
 		//@ assert BlockchainInv(h, hx, s, c);
 		
-		//@ assert array_slice(balances,0,balances.length,_);
+		// assert array_slice(balances,0,balances.length,_);
+		//@ array_slice_deep(balances, 0, balances.length, Positive, unit, ?elems, ?vls);
 		
-		//@ close ValidCheckpoint(balances);
+		//@ close ValidSummary(balances,vls);
 		return balances;
 	}
 	
