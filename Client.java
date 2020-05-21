@@ -3,85 +3,67 @@
 
 public class Client {
 
-    private static final int INITIAL_BALANCE = 100;
-    private static final int TRANSFERENCE_FACTOR = 15; 
-    private static final int ITERATIONS = 110;
-    private static final int QUEUE_SIZE = 150;
+    public static final int INITIAL_BALANCE = 100;
+    public static final int TRANSFERENCE_FACTOR = 15; 
+    public static final int ITERATIONS = 110;
+    public static final int QUEUE_SIZE = 150;
 
     public static void main(String[] args)
-    //@ requires true;
+    //@ requires [_]System.out |-> ?o &*& o != null;
     //@ ensures true;
     {
-    	//double TRANSFERENCE_FACTOR = 0.15;
-    	
         // Create a blockchain with an initial block
         int[] initial_balances = new int[Block.MAX_ID];
+        //@ assert initial_balances |-> ?b;
         for(int i = 0; i < Block.MAX_ID; i++) 
-        //@ invariant 0 <= i &*& i <= Block.MAX_ID &*& array_slice(initial_balances,0,initial_balances.length,_);
+        /*@ invariant 0 <= i &*& i <= Block.MAX_ID 
+        	&*& array_slice_deep(b, 0, i, Positive, unit, ?elems, ?vls)
+        	&*& array_slice(b,i,b,_);
+        @*/
         {
         	initial_balances[i] = Client.INITIAL_BALANCE;
         }
-        //@ close ValidCheckpoint(initial_balances);
+        //@ close ValidSummary(initial_balances);
         
-        int nonce = SummaryBlock.mine(0, initial_balances);
-        BlockChain b_chain = new BlockChain(nonce, initial_balances);
+        BlockChain b_chain = new BlockChain(initial_balances);
 
 	// Transaction Queue
 	CQueue queue = new CQueue(QUEUE_SIZE);
+
+	// Producer
+	Producer p1 = new Producer(queue, b_chain);
 
 	// Worker
 	Worker w1 = new Worker(queue, b_chain);
 
 	// Append new Blocks to the blockchain
 	for(int i = 0; i < ITERATIONS; i++) 
-	//@ invariant 0 <= i &*& i <= ITERATIONS &*& b_chain.BlockchainInv(_, _, _);
+	//@ invariant 0 <= i &*& i <= ITERATIONS &*& isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
 	{
 		// Produce some new transactions
-		for(int j = 0; j < Block.MAX_TX; j++) {
-			int sender = (int)(Math.random()*Block.MAX_ID);
-			int receiver = (int)(Math.random()*Block.MAX_ID);
-			int amount = (int)(Math.random()*b_chain.balanceOf(sender)*(TRANSFERENCE_FACTOR/100.0));
-			
-			queue.enqueue( new Transaction(sender, receiver, amount) );
-		}
+		p1.produce();
 		
 		// Consume
 		w1.work();
 	}
 	
 	// Print all the balances
-	System.out.println("\nBalances");
+	System.out.println("\nBalances\nAccount | Coins");
 	int[] balances = b_chain.getBalances();
-	for(int j = 0; j < Block.MAX_ID; j++) {
-		System.out.printf("% 3d : % 3d \n", j, balances[j]);
+	//@ assert array_slice(balances,0,balances.length,_);
+	for(int j = 0; j < balances.length; j++) 
+	/*@ invariant 0 <= j &*& j <= balances.length
+		&*& [_]System.out |-> ?x &*& x != null
+		&*& array_slice(balances,0,balances.length,_); 
+	@*/
+	{ 
+		//System.out.printf("% 3d : % 3d \n", j, balances[j]);
+		System.out.print("    ");
+		System.out.print((j<10 ? "  " : j<100 ? " " : ""));
+		System.out.print(j);
+		System.out.print(" | ");
+		System.out.print((balances[j]<10 ? "  " : balances[j]<100 ? " " : ""));
+		System.out.println(balances[j]);
 	}
-
-
-        
-       // b_chain.appendBlock(b); // DEVIA DAR ERRO
-        
-
-
-
-        // como é que esta class vai ficar??
-
-        // preciso criar um produtor que está sempre a criar transções e a metê-as na queue.
-        // a transaction queue sacahar não precsa de umacass e deve ficar com a aua teo de producers e consumers
-
-        // fazer o worer especia dos blocos sumário
-
-/*        for(int i = 0; i < 10; i++) {
-            Transaction t = new Transaction(1, 2, 100);
-            TransactionQueue.getInstance().insertTransaction(t);
-        }
-
-        System.out.println("fhaifohaf");
-
-        Worker w = new Worker();
-        w.mine();
-
-
-*/
     }
-
 }

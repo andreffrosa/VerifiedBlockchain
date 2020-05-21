@@ -57,7 +57,7 @@ Note: please add your names and student numbers in all files you submit.
 		return 0 <= id && id < Block.MAX_ID;
 	}
 	
-	predicate validNonce(int n, int hp, int body) = hashOf3(body, hp, n) % 100 == 0;
+	predicate ValidNonce(int n, int hp, int body) = hashOf3(body, hp, n) % 100 == 0;
 
 @*/
 

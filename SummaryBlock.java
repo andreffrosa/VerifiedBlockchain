@@ -20,7 +20,10 @@ Note: please add your names and student numbers in all files you submit.
 
 
 /*@
-	predicate ValidCheckpoint(int[] b) = b.length == Block.MAX_ID;
+	predicate Positive(unit a, int v; int n) = v >= 0 &*& n == v;
+	
+	predicate ValidSummary(int[] b; list<int> vls) = b.length == Block.MAX_ID
+				      &*& array_slice_deep(b, 0, b.length, Positive, unit, ?elems, vls);
 @*/
 
 final class SummaryBlock implements Block {
@@ -29,10 +32,11 @@ final class SummaryBlock implements Block {
 			this.previous |-> p
 		&*& this.hashPrevious |-> hp
 		&*& this.random |-> r
-		&*& this.balances |-> ?a
+		&*& this.balances |-> ?b
 		&*& isBlock(p,hp)
-		&*& array_slice(a,0,a.length,?items)
-		&*& h == hashOf3(sum(items),hp, r)
+		&*& ValidSummary(b, ?vls)
+		//&*& array_slice_deep(b, 0, b.length, Positive, unit, ?elems, ?items)
+		&*& h == hashOf3(sum(vls),hp, r)
 		&*& h % 100 == 0;
 	@*/
 
@@ -42,36 +46,45 @@ final class SummaryBlock implements Block {
 	private int balances[];
 
 	public SummaryBlock(Block previous, int r, int balances[])
-	/*@ requires
-		    isBlock(previous, ?h)
-		&*& array_slice(balances,0,balances.length, ?items)
-		&*& ValidCheckpoint(balances)
-		&*& validNonce(r, h, sum(items));
+	/*@ requires isBlock(previous, ?h)
+		 &*& ValidSummary(balances, ?vls)
+		 &*& ValidNonce(r, h, sum(vls));
 	@*/
-	//@ ensures BlockInv(previous, h, _, r) &*& validNonce(r, h, sum(items));
+	//@ ensures BlockInv(previous, h, _, r) &*& ValidNonce(r, h, sum(vls));
 	{
-		//@ open validNonce(r, h, sum(items));
+		//@ open ValidNonce(r, h, sum(vls));
 		//@ open isBlock(previous, h);
 		this.previous = previous;
 		this.hashPrevious = previous == null ? 0 : previous.hash();
 		this.random = r;
 		this.balances = balances;
-		//@ close validNonce(r, h, sum(items));
+		//@ close ValidNonce(r, h, sum(vls));
 	}
 
 	public int balanceOf(int id)
 	//@ requires BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
-	//@ ensures BlockInv(p, hp, h, r);
+	//@ ensures BlockInv(p, hp, h, r) &*& result >= 0;
 	{
-		if(id >= balances.length || id < 0)
+		/*if(id >= balances.length || id < 0)
 			return -1;
-		else {
-			int bal = balances[id];
+		else {*/
+			//@ open BlockInv(p, hp, h, r);
 			//@ assert this.balances |-> ?b;
-			//@ assert array_slice (b, 0, b.length, ?elems);
+			//@ open ValidSummary(b, ?vls);
+			//@ assert id < balances.length;
+			//@ assert array_slice_deep(b, 0, b.length, Positive, unit, ?elems, vls);
+			int bal = balances[id];
+			//@ assert array_slice_deep(b, 0, b.length, Positive, unit, elems, vls);
+			
+			// assert array_slice (b, 0, b.length, ?elems); 
+			// bal == nth(id, elems);
+			// assert array_slice_deep(b, 0, b.length, Positive, unit, elems, vls);
 			//@ bal == nth(id, elems);
+			//@ assert bal >= 0;
+			//@ close ValidSummary(b, vls);
+			//@ close BlockInv(p, hp, h, r);
 			return bal;
-		}
+		//}
 	}
 
 	public Block getPrevious()
@@ -152,7 +165,7 @@ final class SummaryBlock implements Block {
 	
 	public static int mine(int hp, int[] balances) 
 	//@ requires balances.length == Block.MAX_ID &*& array_slice(balances, 0, balances.length, ?items);
-	//@ ensures array_slice(balances, 0, balances.length, items) &*& validNonce(result, hp, sum(items));
+	//@ ensures array_slice(balances, 0, balances.length, items) &*& ValidNonce(result, hp, sum(items));
 	{
 		int r = 0;
 		while( hash(hp, r, balances) % 100 != 0 ) 

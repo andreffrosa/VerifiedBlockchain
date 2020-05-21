@@ -19,6 +19,13 @@ Note: please add your names and student numbers in all files you submit.
 
 */
 
+/*@
+	
+	predicate ValidSimple(Transaction[] ts; list<int> hashes) = ts.length == Block.MAX_TX
+				      &*& array_slice_deep(ts, 0, ts.length, TransHash, unit, ?transactions, hashes);
+				      
+@*/
+
 final class SimpleBlock implements Block {
 
 	/*@ predicate BlockInv(Block p, int hp, int h, int r) =
@@ -73,20 +80,20 @@ final class SimpleBlock implements Block {
 	public SimpleBlock(Block previous, int r, Transaction ts[])
 	/*@ requires 
 		    isBlock(previous, ?h) 
-		&*& array_slice_deep(ts,0,ts.length,TransHash,unit, ?els, ?vls) 
-		&*& ts.length == Block.MAX_TX
-		&*& validNonce(r, h, sum(vls));
+		&*& ValidSimple(ts, ?hashes)
+		&*& ValidNonce(r, h, sum(hashes));
 	@*/
-	//@ ensures BlockInv(previous,h,_,r) &*& validNonce(r, h, sum(vls));
+	//@ ensures BlockInv(previous,h,_,r) &*& ValidNonce(r, h, sum(hashes));
 	{
-		//@ open validNonce(r, h, sum(vls));
+		//@ open ValidNonce(r, h, sum(hashes));
+		//@ open ValidSimple(ts, hashes);
 		//@ open isBlock(previous, h);
 		this.previous = previous;
 		this.hashPrevious = previous == null ? 0 : previous.hash();
 		this.random = r;
 		this.transactions = ts;
 		//@ close isBlock(previous, h);
-		//@ close validNonce(r, h, sum(vls));
+		//@ close ValidNonce(r, h, sum(hashes));
 		
 		//@ assert isBlock(previous, h);
 	}
@@ -176,7 +183,7 @@ final class SimpleBlock implements Block {
 	
 	public static int mine(int hp, Transaction[] ts) 
 	//@ requires ts.length == Block.MAX_TX &*& array_slice_deep(ts,0,ts.length,TransHash,unit, ?els, ?vls);
-	//@ ensures array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls) &*& validNonce(result, hp, sum(vls));
+	//@ ensures array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls) &*& ValidNonce(result, hp, sum(vls));
 	{
 		int r = 0;
 		while( hash(hp, r, ts) % 100 != 0 ) 
@@ -185,7 +192,7 @@ final class SimpleBlock implements Block {
 			r++;
 		}
 		//@ assert hashOf3(sum(vls), hp, r) % 100 == 0;
-		//@ close validNonce(r, hp, sum(vls));
+		//@ close ValidNonce(r, hp, sum(vls));
 		return r;
 	}
 
