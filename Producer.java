@@ -28,18 +28,23 @@ public class Producer  /*implements Runnable*/ {
 	{
 		double ratio = Client.TRANSFERENCE_FACTOR / 100.0;
 		
-		for(int j = 0; j < Block.MAX_TX; j++) 
-		//@ invariant 0 <= j &*& j <= Block.MAX_TX &*& isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
+		int counter = 0; 
+		while( counter < Block.MAX_TX )
+		//@ invariant 0 <= counter &*& counter <= Block.MAX_TX &*& isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
 		{
-			int sender = Util.randomInt(0, Block.MAX_ID-1); //(int)(Math.random() * Block.MAX_ID);
-			int receiver = Util.randomInt(0, Block.MAX_ID-1); //(int)(Math.random() * Block.MAX_ID);
+			int sender = Util.randomInt(0, Block.MAX_ID-1);
+			int receiver = Util.randomInt(0, Block.MAX_ID-1);
 			// assert ValidID(sender);
 			
-			
 			int max_amount = (int) (b_chain.balanceOf(sender) * ratio);
-			int amount = Util.randomInt(0, max_amount); //(int)(Math.random() * b_chain.balanceOf(sender) * (TRANSFERENCE_FACTOR/100.0));
+			
+			if(max_amount > 0) {
+				int amount = Util.randomInt(1, max_amount);
 		
-			queue.enqueue( new Transaction(sender, receiver, amount) );
+				queue.enqueue( new Transaction(sender, receiver, amount) );
+				
+				counter++;
+			}
 		}
 	}
 

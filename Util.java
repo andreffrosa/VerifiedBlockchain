@@ -20,16 +20,22 @@ public class Util {
     {
     	double r = Math.random();
     	return r < 0.0 ? 0.0 : r >= 1.0 ? 0.9999999 : r;
+    	
+    	return 
     }*/
     
     public static int randomInt(int min, int max) 
     //@ requires min <= max;
     //@ ensures min <= result &*& result <= max;
     {
+    	int delta = max - min + 1;
+    	//@ assert (max - min) + 1 > 0;
+    	int r = (int) (Math.random() * delta);
+    	int r2 = r % delta;
+    	//@ assert (max - min) + 1 > 0;
+    	//@ assert r2 <= delta;
     	
-    	int r = (int) (Math.random()*(max - min + 1));
     	// assert 0 <= r &*& r <= max - min + 1;
-    	System.out.println(min + " <= " + (r+min) + " <= " + max);
     	return r + min;
     	//return min + (max - min + 1)/15; 
     }
