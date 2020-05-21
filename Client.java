@@ -14,11 +14,11 @@ public class Client {
     {
         // Create a blockchain with an initial block
         int[] initial_balances = new int[Block.MAX_ID];
-        //@ assert initial_balances |-> ?b;
+        
         for(int i = 0; i < Block.MAX_ID; i++) 
         /*@ invariant 0 <= i &*& i <= Block.MAX_ID 
-        	&*& array_slice_deep(b, 0, i, Positive, unit, ?elems, ?vls)
-        	&*& array_slice(b,i,b,_);
+        	&*& array_slice_deep(initial_balances, 0, i, Positive, unit, ?elems, ?vls)
+        	&*& array_slice(initial_balances,i,initial_balances.length,_);
         @*/
         {
         	initial_balances[i] = Client.INITIAL_BALANCE;
@@ -31,20 +31,20 @@ public class Client {
 	CQueue queue = new CQueue(QUEUE_SIZE);
 
 	// Producer
-	Producer p1 = new Producer(queue, b_chain);
+	Producer p1 = new Producer();
 
 	// Worker
-	Worker w1 = new Worker(queue, b_chain);
+	Worker w1 = new Worker();
 
 	// Append new Blocks to the blockchain
 	for(int i = 0; i < ITERATIONS; i++) 
-	//@ invariant 0 <= i &*& i <= ITERATIONS &*& isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
+	//@ invariant 0 <= i &*& i <= ITERATIONS &*& isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue) &*& [_]System.out |-> o &*& o != null;
 	{
 		// Produce some new transactions
-		p1.produce();
+		p1.produce(queue, b_chain);
 		
 		// Consume
-		w1.work();
+		w1.work(queue, b_chain);
 	}
 	
 	// Print all the balances
@@ -63,7 +63,8 @@ public class Client {
 		System.out.print(j);
 		System.out.print(" | ");
 		System.out.print((balances[j]<10 ? "  " : balances[j]<100 ? " " : ""));
-		System.out.println(balances[j]);
+		System.out.print(balances[j]);
+		System.out.print("/n");
 	}
     }
 }

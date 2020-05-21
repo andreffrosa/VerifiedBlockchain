@@ -1,51 +1,69 @@
 
 
 public class Worker /*implements Runnable*/ {
-
-	/*@
+/*
+	
 		predicate WorkerInv() =
 				    this.queue |-> ?q
 				&*& this.b_chain |-> ?bc
 				&*& isBlockchain(bc)
 				&*& q != null &*& CQueueInv(q);
-	@*/
+	
 
 	private CQueue queue;
-	private BlockChain b_chain;
+	private BlockChain b_chain;*/
 
-	public Worker(CQueue queue, BlockChain b_chain) 
-	//@ requires isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
+	public Worker() 
+	// requires isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
 	// ensures WorkerInv() // isto nao vai impedir depois criar outros workers a apontar para o mesmo sitio e ate impedir usar a bchain na main?
-	//@ ensures isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
+	// ensures isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
+	//@ requires true;
+	//@ ensures true;
 	{
-		this.queue = queue;
-		this.b_chain = b_chain;
+		//this.queue = queue;
+		//this.b_chain = b_chain;
 	}
 	
-	public void work() 
-	//@ requires this.b_chain |-> ?bc &*& isBlockchain(bc) &*& this.queue |-> ?q &*& q != null &*& CQueueInv(q);
-	//@ ensures isBlockchain(bc) &*& q != null &*& CQueueInv(q);
+	public void work(CQueue queue, BlockChain b_chain) 
+	//@ requires isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue) &*& [_]System.out |-> ?o &*& o != null;
+	//@ ensures isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue) &*& o != null;
 	{
-	
 		Transaction[] ts = new Transaction[Block.MAX_TX];
-		int counter = 0;
-		while( counter < Block.MAX_TX )
-		//@ invariant 0 <= counter &*& counter <= Block.MAX_TX &*& array_slice(ts,0,ts.length,_) &*& isBlockchain(bc) &*& q != null &*& CQueueInv(q);
+		int i = 0;
+		while( i < Block.MAX_TX )
+		/*@ invariant 0 <= i &*& i <= Block.MAX_TX 
+			&*& array_slice_deep(ts, 0, i, TransHash, unit, ?transactions, ?hashes)
+			&*& array_slice(ts,i,ts.length,_) 
+			&*& isBlockchain(b_chain) 
+			&*& queue != null &*& CQueueInv(queue);
+		@*/
 		{
 			Transaction t = queue.dequeue();
-			
-			boolean valid = b_chain.balanceOf(t.getSender()) >= t.getAmount();
-			
-			if(valid) {
-				ts[counter] = t;
-				counter++;
-			} 
-			//else {
-				// Discard t
-			//}
-		}
+			//@ assert TransHash(_, t, _);
+			//@ open TransHash(_, t, _);
+			//@ assert t != null;
+			ts[i] = t;
+			i++;
+
+		} 
+		//@ close ValidSimple(ts, _);
 		
-		boolean status = b_chain.appendBlock(ts); // Fazer o que?
+		//@ open isBlockchain(b_chain);
+		boolean status = b_chain.appendBlock(ts);
+		
+		// Re-insert transactions in the queue
+		if(!status) {
+			for(int j = 0; j < Block.MAX_TX; j++ ) 
+			/*@ invariant 0 <= j &*& j <= Block.MAX_TX 
+					&*& array_slice_deep(ts, j, ts.length, TransHash, unit, ?trans, ?hx)
+					&*& array_slice(ts,0,j,_);
+			
+			@*/
+			{
+				queue.enqueue(ts[j]);
+				ts[j] = null; // ?
+			}
+		}
 	}
 	
 }

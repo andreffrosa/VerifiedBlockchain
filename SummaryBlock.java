@@ -3,7 +3,7 @@ Construction and Verification of Software 2019/20.
 
 Project assignment to implement and verify a simplified blockchain.
 
-2020 João Costa Seco, Eduardo Geraldo
+2020 JoÃ£o Costa Seco, Eduardo Geraldo
 
 Note: please add your names and student numbers in all files you submit.
 */
@@ -22,8 +22,8 @@ Note: please add your names and student numbers in all files you submit.
 /*@
 	predicate Positive(unit a, int v; int n) = v >= 0 &*& n == v;
 	
-	predicate ValidSummary(int[] b; list<int> vls) = b.length == Block.MAX_ID
-				      &*& array_slice_deep(b, 0, b.length, Positive, unit, ?elems, vls);
+	predicate ValidSummary(int[] b;) = b != null &*& b.length == Block.MAX_ID;
+							//&*& array_slice_deep(b, 0, b.length, Positive, unit, ?elems, vls);
 @*/
 
 final class SummaryBlock implements Block {
@@ -32,11 +32,11 @@ final class SummaryBlock implements Block {
 			this.previous |-> p
 		&*& this.hashPrevious |-> hp
 		&*& this.random |-> r
-		&*& this.balances |-> ?b
+		&*& this.balances |-> ?a
 		&*& isBlock(p,hp)
-		&*& ValidSummary(b, ?vls)
-		//&*& array_slice_deep(b, 0, b.length, Positive, unit, ?elems, ?items)
-		&*& h == hashOf3(sum(vls),hp, r)
+		&*& array_slice(a,0,a.length,?items)
+		&*& ValidSummary(a)
+		&*& h == hashOf3(sum(items),hp, r)
 		&*& h % 100 == 0;
 	@*/
 
@@ -46,9 +46,11 @@ final class SummaryBlock implements Block {
 	private int balances[];
 
 	public SummaryBlock(Block previous, int r, int balances[])
-	/*@ requires isBlock(previous, ?h)
-		 &*& ValidSummary(balances, ?vls)
-		 &*& ValidNonce(r, h, sum(vls));
+	/*@ requires
+		    isBlock(previous, ?h)
+		&*& array_slice(balances,0,balances.length,?vls)
+		&*& ValidSummary(balances)
+		&*& ValidNonce(r, h, sum(vls));
 	@*/
 	//@ ensures BlockInv(previous, h, _, r) &*& ValidNonce(r, h, sum(vls));
 	{
@@ -63,28 +65,17 @@ final class SummaryBlock implements Block {
 
 	public int balanceOf(int id)
 	//@ requires BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
-	//@ ensures BlockInv(p, hp, h, r) &*& result >= 0;
+	//@ ensures BlockInv(p, hp, h, r);
 	{
-		/*if(id >= balances.length || id < 0)
+		if(id >= balances.length || id < 0)
 			return -1;
-		else {*/
-			//@ open BlockInv(p, hp, h, r);
-			//@ assert this.balances |-> ?b;
-			//@ open ValidSummary(b, ?vls);
-			//@ assert id < balances.length;
-			//@ assert array_slice_deep(b, 0, b.length, Positive, unit, ?elems, vls);
+		else {
 			int bal = balances[id];
-			//@ assert array_slice_deep(b, 0, b.length, Positive, unit, elems, vls);
-			
-			// assert array_slice (b, 0, b.length, ?elems); 
-			// bal == nth(id, elems);
-			// assert array_slice_deep(b, 0, b.length, Positive, unit, elems, vls);
+			//@ assert this.balances |-> ?b;
+			//@ assert array_slice (b, 0, b.length, ?elems);
 			//@ bal == nth(id, elems);
-			//@ assert bal >= 0;
-			//@ close ValidSummary(b, vls);
-			//@ close BlockInv(p, hp, h, r);
 			return bal;
-		//}
+		}
 	}
 
 	public Block getPrevious()
@@ -174,7 +165,7 @@ final class SummaryBlock implements Block {
 			r++;
 		}
 		//@ assert hashOf3(sum(items), hp, r) % 100 == 0;
-		//@ close validNonce(r, hp, sum(items));
+		//@ close ValidNonce(r, hp, sum(items));
 		return r;
 	}
 

@@ -18,7 +18,7 @@
 	}
 
 
-    predicate isBlockchain(BlockChain bc;) = bc == null ? emp : bc.BlockchainInv(?h, ?hx, ?s, ?c);
+    predicate isBlockchain(BlockChain bc;) = bc != null &*& bc.BlockchainInv(?h, ?hx, ?s, ?c);
     
     
 @*/
@@ -67,16 +67,19 @@ final class BlockChain {
 	}
 
 	public BlockChain(int[] initial_balances)
-	/*@ requires ValidSummary(initial_balances, ?vls) 
+	/*@ requires ValidSummary(initial_balances) &*& array_slice_deep(initial_balances,0,initial_balances.length,Positive,unit, ?els, ?vls) 
 		&*& [_]System.out |-> ?o &*& o != null;
 	@*/
 	//@ ensures BlockchainInv(_, _, 1, _) &*& o != null;
 	{
+		//@ array_slice_convert(initial_balances,0,initial_balances.length);
+		//@ open ValidSummary(initial_balances);
+		
 		int nonce = SummaryBlock.mine(0, initial_balances);
 		
 		SummaryBlock b = new SummaryBlock(null, nonce, initial_balances);
 		
-		//@ open ValidNonce(nonce, 0, sum(vls));
+		//@ open ValidNonce(nonce, 0, sum(els));
 		//@ open b.BlockInv(null, 0, ?hx, nonce);
 		//@ assert hx % 100 == 0;
 		
@@ -88,27 +91,18 @@ final class BlockChain {
 
 		//@ close BlockchainInv(this.head, hx, 1, conc(nill, this.head));
 	}
-	
-	/*public Block getHead()
-	//@ requires BlockchainInv(?h, ?s, ?c);
-	//@ ensures BlockchainInv(h, s, c) &*& result == h &*& result != null &*& c == conc(_, h);
-	{
-		//@ open BlockchainInv(h, s, c);
-		//@ assert h.BlockInv(_, _, _, _);
-		return this.head;
-	}
 
 	public int getSize()
-	//@ requires BlockchainInv(?h, ?s, ?c);
-	//@ ensures BlockchainInv(h, s, c) &*& result == s &*& result == len(c);
+	//@ requires BlockchainInv(?h, ?hx, ?s, ?c);
+	//@ ensures BlockchainInv(h, hx, s, c) &*& result == s &*& result == len(c);
 	{
 		return this.size;
-	}*/
+	}
 
 
 	public boolean isNextSummary()
 	//@ requires BlockchainInv(?h, ?hx, ?s, ?c);
-	//@ ensures BlockchainInv(h, hx, s, c) &*& result ? (s % (BlockChain.SUMMARY_INTERVAL + 1) == 0) : true;
+	//@ ensures BlockchainInv(h, hx, s, c) &*& result ? (s % (BlockChain.SUMMARY_INTERVAL + 1) == 0) : (s % (BlockChain.SUMMARY_INTERVAL + 1) != 0);
 	{
 		return this.size % (BlockChain.SUMMARY_INTERVAL + 1) == 0;
 	}
@@ -124,27 +118,24 @@ final class BlockChain {
 	/*@ requires BlockchainInv(?h, hp, ?s, ?c) &*& ts.length == Block.MAX_TX 
 				&*& array_slice_deep(ts,0,ts.length,TransHash,unit, ?els, ?vls) 
 				&*& ValidNonce(nonce, hp, sum(vls)) 
-				&*& s % (BlockChain.SUMMARY_INTERVAL + 1) != 0
+				//&*& s % (BlockChain.SUMMARY_INTERVAL + 1) != 0
 				&*& [_]System.out |-> ?o &*& o != null; @*/
-	//@ ensures o != null &*& result ? BlockchainInv(?b, _, s+1, conc(c, b)) : BlockchainInv(h, hp, s, c);
+	//@ ensures o != null &*& result ? BlockchainInv(?b, _, s+1, conc(c, b)) : (BlockchainInv(h, hp, s, c) &*& array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls) );
 	{ 
-		//if(this.head.hash() != hp) // e' preciso meter sequer? como meter na pre-cond? -> tem de se alterar a inv e meter no valid nextB
-		//	return false;
+		if(this.head.hash() != hp)
+			return false;
 		
 		SimpleBlock b = new SimpleBlock(this.head, nonce, ts);
-		
 		//@ assert b.BlockInv(h, hp, ?hx1, nonce);
 		
 		int i = 0;
 		boolean valid = true;
-		while( i < Block.MAX_ID && valid ) // Esta validacao deveria vir de fora?
+		while( i < Block.MAX_ID && valid )
 		//@ invariant i >= 0 &*& i <= Block.MAX_ID &*& b.BlockInv(h, hp, hx1, nonce);
 		{
 			valid = valid && b.balanceOf(i) > 0;
 			i++;
 		}
-		
-		// Se nao for valido, como recuperar a BlockInv da cabeca?
 
 		if(valid) {
 			this.head = b;
@@ -156,71 +147,59 @@ final class BlockChain {
 			log(this.size, "Simple");
 		} else {
 			//@ open b.BlockInv(h, hp, hx1, nonce);
+			
 			//@ close BlockchainInv(h, hp, s, c);
+			//@ assert array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls);
 		}
 
 		return valid;
 	}
 	
-	private boolean appendSummary(int hp, int nonce, int[] balances) 
-	/*@ requires BlockchainInv(?h, hp, ?s, ?c) 
-				&*& ValidSummary(balances, ?vls)  
-				&*& ValidNonce(nonce, hp, sum(vls)) 
+	private void appendSummary() 
+	/*@ requires BlockchainInv(?h, ?hp, ?s, ?c) 
 				&*& s % (BlockChain.SUMMARY_INTERVAL + 1) == 0
 				&*& [_]System.out |-> ?o &*& o != null; @*/
-	//@ ensures o != null &*& result ? BlockchainInv(?b, _, s+1, conc(c, b)) : BlockchainInv(h, hp, s, c);
+	//@ ensures o != null &*& BlockchainInv(?b, _, s+1, conc(c, b));
 	{
-		//if(this.head.hash() != hp) // e' preciso meter sequer? como meter na pre-cond? -> tem de se alterar a inv e meter no valid nextB
-		//	return false;
-		
-		boolean valid = isNextSummary();
-		
-		// assert b.BlockInv(h, hp, ?hx, nonce);
-		
-		// open BlockchainInv(h, s, c);
-		// assert this.head |-> ?he;
-		// assert he.BlockInv(_, _, hp, _);
-		
-		if(valid) {
-			SummaryBlock b = new SummaryBlock(this.head, nonce, balances);
-			this.head = b;
-			this.size++;
-			//@ this.ch = conc(c, b);
+		int[] balances = this.getBalances();
+		//@ open ValidSummary(balances);
 			
-			//@ close BlockchainInv(b, _, s+1, conc(c, b));
+		int hash_previous = this.headHash();
 			
-			log(this.size, "Summary");
-		} else {
-			// open b.BlockInv(h, hp, hx, nonce);
-			// close BlockchainInv(h, s, c);
-		}
+		int nonce = SummaryBlock.mine(hash_previous, balances);
+			
+		SummaryBlock b = new SummaryBlock(this.head, nonce, balances);
+		this.head = b;
+		this.size++;
+		//@ this.ch = conc(c, b);
+			
+		//@ close BlockchainInv(b, _, s+1, conc(c, b));
 		
-		return valid;
+		log(this.size, "Summary");
 	}
 
 	public int[] getBalances()
 	//@ requires BlockchainInv(?h, ?hx, ?s, ?c);
-	//@ ensures BlockchainInv(h, hx, s, c) &*& ValidSummary(result, _); 
+	//@ ensures BlockchainInv(h, hx, s, c) &*& ValidSummary(result) &*& array_slice(result,0,result.length,_) ; 
 	{
 		int[] balances = new int[Block.MAX_ID];
 		for(int i = 0; i < Block.MAX_ID; i++) 
 		/*@ invariant 0 <= i &*& i <= Block.MAX_ID 
-				&*& array_slice_deep(balances, 0, i, Positive, unit, ?elems, ?vls)
-				&*& array_slice(balances,i,balances.length,_) 
+				//&*& array_slice_deep(balances, 0, i, Positive, unit, ?elems, ?vls)
+				&*& array_slice(balances,0,balances.length,_) 
 				&*& BlockchainInv(h, hx, s, c);
 		@*/
 		{
 			//@ open BlockchainInv(h, hx, s, c);
 			balances[i] = this.head.balanceOf(i);
-			//@ assert balances[i] >= 0;
+		
 			//@ close BlockchainInv(h, hx, s, c);
 		}
 		//@ assert BlockchainInv(h, hx, s, c);
 		
-		// assert array_slice(balances,0,balances.length,_);
-		//@ array_slice_deep(balances, 0, balances.length, Positive, unit, ?elems, ?vls);
+		//@ assert array_slice(balances,0,balances.length,_);
 		
-		//@ close ValidSummary(balances,vls);
+		//@ close ValidSummary(balances);
 		return balances;
 	}
 	
@@ -228,30 +207,43 @@ final class BlockChain {
 	/*@ requires BlockchainInv(?h, ?hp, ?s, ?c) 
 				&*& ValidSimple(ts, ?vls)
 				&*& [_]System.out |-> ?o &*& o != null; @*/
-	//@ ensures o != null &*& result ? BlockchainInv(?b, _, s+1, conc(c, b)) : BlockchainInv(h, hp, s, c);
+	/*@ ensures o != null &*& 
+			result ? 
+				( (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) == 0 ? 
+					BlockchainInv(?b2, _, s+2, conc(conc(c, _), b2)) 
+				      : BlockchainInv(?b, _, s+1, conc(c, b)) )
+				: (BlockchainInv(h, hp, s, c) &*& ValidSimple(ts, vls));
+	@*/
 	{
-	
-		int hp = this.headHash();
+		//@ open ValidSimple(ts, vls);
 		
-		int nonce = SimpleBlock.mine(hp, ts);
+		int hash_previous = this.headHash();
 		
-		boolean status = this.appendSimple(hp, nonce, ts); // fazer o que com isto?
+		int nonce = SimpleBlock.mine(hash_previous, ts);
 		
-		if(this.isNextSummary()) {
-			int[] balances = this.getBalances();
-			hp = this.headHash();
-			
-			nonce = SummaryBlock.mine(hp, balances);
-			
-			status = this.appendSummary(hp, nonce, balances); // fazer o que com isto?
-        	}
-        	
-        	return true; // retornar o que?
+		boolean status = this.appendSimple(hash_previous, nonce, ts);
+		
+		if(status) {
+			if(this.isNextSummary()) {
+				//@ assert (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) == 0;
+				this.appendSummary();
+				//@ close BlockchainInv(?b2, _, s+2, conc(conc(c, _), b2));
+			} else {
+				//@ assert (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) != 0;
+				//@ assert this.head |-> ?b;
+				//@ close BlockchainInv(b, _, s+1, conc(c, b));
+			}
+		} else {
+			// open b
+			return false;
+		}
+		
+        	return true;
 	}
 	
 	public int balanceOf(int id)
 	//@ requires BlockchainInv(?h, ?hx, ?s, ?c) &*& ValidID(id) == true;
-	//@ ensures BlockchainInv(h, hx, s, c) &*& result >= 0;
+	//@ ensures BlockchainInv(h, hx, s, c);
 	{
 		return this.head.balanceOf(id);
 	}

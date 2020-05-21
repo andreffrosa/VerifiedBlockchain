@@ -152,7 +152,7 @@ class CQueue {
 
   Transaction dequeue() 
   //@ requires CQueueInv(this);
-  //@ ensures CQueueInv(this);
+  //@ ensures CQueueInv(this) &*& TransHash(_, result, _);
   {
     mon.lock();
     //@ open CQueue_shared_state(this)();
@@ -163,6 +163,7 @@ class CQueue {
     }
     //@ open QueueInv(q,_,_,_);
     Transaction v = q.dequeue();
+    //@ assert TransHash(_, t, _);
     //@ close CQueue_nonfull(this)();
     notfull.signal();
     mon.unlock();

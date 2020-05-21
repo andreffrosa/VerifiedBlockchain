@@ -3,7 +3,7 @@ Construction and Verification of Software 2019/20.
 
 Project assignment to implement and verify a simplified blockchain.
 
-2020 João Costa Seco, Eduardo Geraldo
+2020 JoÃ£o Costa Seco, Eduardo Geraldo
 
 Note: please add your names and student numbers in all files you submit.
 */
@@ -20,10 +20,8 @@ Note: please add your names and student numbers in all files you submit.
 */
 
 /*@
-	
-	predicate ValidSimple(Transaction[] ts; list<int> hashes) = ts.length == Block.MAX_TX
+	predicate ValidSimple(Transaction[] ts; list<int> hashes) = ts != null &*& ts.length == Block.MAX_TX
 				      &*& array_slice_deep(ts, 0, ts.length, TransHash, unit, ?transactions, hashes);
-				      
 @*/
 
 final class SimpleBlock implements Block {
@@ -86,7 +84,6 @@ final class SimpleBlock implements Block {
 	//@ ensures BlockInv(previous,h,_,r) &*& ValidNonce(r, h, sum(hashes));
 	{
 		//@ open ValidNonce(r, h, sum(hashes));
-		//@ open ValidSimple(ts, hashes);
 		//@ open isBlock(previous, h);
 		this.previous = previous;
 		this.hashPrevious = previous == null ? 0 : previous.hash();
@@ -100,7 +97,7 @@ final class SimpleBlock implements Block {
 
 	public int balanceOf(int id)
 	//@ requires BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
-	//@ ensures BlockInv(p, hp, h, r) &*& result >= 0;
+	//@ ensures BlockInv(p, hp, h, r);
 	{
 		int delta = 0;
 		int i = 0;
@@ -197,3 +194,4 @@ final class SimpleBlock implements Block {
 	}
 
 }
+
