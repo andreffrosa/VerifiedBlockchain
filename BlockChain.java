@@ -190,7 +190,7 @@ final class BlockChain {
 			//@ assert array_slice(balances, 0, sender, ?litems);
 			//@ assert array_slice(balances, sender, sender+1, _);
 			//@ assert array_slice(balances, sender+1, balances.length, ?ritems);
-			//balances[sender] -= amount;
+			balances[sender] -= amount;
 			//@ assert array_element(balances, sender, ?v);
 			// int v = balances[sender]; 
 			//@ assert array_slice(balances, 0, sender, litems);
