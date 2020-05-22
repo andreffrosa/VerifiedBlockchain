@@ -156,6 +156,23 @@ final class BlockChain {
 			int sender = ts[i].getSender();
 			int receiver = ts[i].getReceiver();
 			
+			//@ close TransInv(ts[i], t_s, t_r, t_a);
+			//@ close TransHash(x, ts[i], hash);
+			
+			int tmp = ts[i].hash(); // aux to proof
+			//@ length_drop(i, hashes);
+			//@ take_one_more(i, hashes);
+			//@ assert array_slice_deep(ts,0,i,TransHash,unit,?lels,?lvls);
+			//@ assert array_slice_deep(ts,i+1,ts.length,TransHash,unit,?rels,?rvls);
+			//@ append_assoc(lels, cons(ts[i], nil), rels);
+			//@ append_assoc(lvls, cons(tmp, nil), rvls);
+			//@ array_slice_deep_close(ts, i, TransHash, unit);
+			//@ array_slice_deep_join(ts, 0);
+			//@ array_slice_deep_join(ts, 0);
+
+			//@ assert array_slice_deep(ts, 0, ts.length, TransHash, unit, ?transactions2, ?hashes2); // como assegurar que se manteve igual?
+			
+			
 			//@ open ValidSummary(balances);
 			
 			//@ assert ValidID(sender) == true;
@@ -173,7 +190,7 @@ final class BlockChain {
 			//@ assert array_slice(balances, 0, sender, ?litems);
 			//@ assert array_slice(balances, sender, sender+1, _);
 			//@ assert array_slice(balances, sender+1, balances.length, ?ritems);
-			balances[sender] -= amount;
+			//balances[sender] -= amount;
 			//@ assert array_element(balances, sender, ?v);
 			// int v = balances[sender]; 
 			//@ assert array_slice(balances, 0, sender, litems);
@@ -184,28 +201,11 @@ final class BlockChain {
 			
 			//@ array_slice_join(balances, 0);
 			//@ array_slice_join(balances, 0);
-			//@ assert array_slice(balances, 0, balances.length, litems);
+			//@ assert array_slice(balances, 0, balances.length, ?new_items); // como provar que o new items mudou so uma coisa
 			//@ assert true;
 			
 			aux(balances, receiver, balances[receiver] - amount);
 			
-			//@ close ValidSummary(balances);
-			
-			//@ close TransInv(ts[i], t_s, t_r, t_a);
-			//@ close TransHash(x, ts[i], hash);
-			
-			int tmp = t.hash();
-			//@ length_drop(i, hashes);
-			//@ take_one_more(i, hashes);
-			//@ assert array_slice_deep(ts,0,i,TransHash,unit,?lels,?lvls);
-			//@ assert array_slice_deep(ts,i+1,ts.length,TransHash,unit,?rels,?rvls);
-			//@ append_assoc(lels, cons(ts[i], nil), rels);
-			//@ append_assoc(lvls, cons(tmp, nil), rvls);
-			//@ array_slice_deep_close(ts, i, TransHash, unit);
-			//@ array_slice_deep_join(ts, 0);
-			//@ array_slice_deep_join(ts, 0);
-			
-
 			
 			// array_slice_deep_close(ts, i);
 			//@ close ValidSummary(balances);
