@@ -64,7 +64,7 @@ class Queue {
 
   Transaction dequeue() 
   //@ requires QueueInv(this, P, ?n, ?m) &*& n > 0;
-  //@ ensures QueueInv(this, P, n-1, m);
+  //@ ensures QueueInv(this, P, n-1, m) &*& result != null &*& TransInv(result, ?s, ?r, ?v);
   {
     Transaction v = array[tail++];
     if( tail == array.length ) tail = 0;
@@ -152,7 +152,7 @@ class CQueue {
 
   Transaction dequeue() 
   //@ requires CQueueInv(this);
-  //@ ensures CQueueInv(this) &*& TransHash(_, result, _);
+  //@ ensures CQueueInv(this) &*& result != null &*& TransInv(result, ?s, ?r, ?v);
   {
     mon.lock();
     //@ open CQueue_shared_state(this)();
@@ -162,11 +162,11 @@ class CQueue {
       //@ open CQueue_nonempty(this)();
     }
     //@ open QueueInv(q,_,_,_);
-    Transaction v = q.dequeue();
-    //@ assert TransHash(_, t, _);
+    Transaction t = q.dequeue();
+    //@ assert TransInv(t, ?s, ?r, ?v);
     //@ close CQueue_nonfull(this)();
     notfull.signal();
     mon.unlock();
-    return v;
+    return t;
   }
 }

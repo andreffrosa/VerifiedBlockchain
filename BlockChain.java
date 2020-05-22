@@ -20,20 +20,9 @@
 
     predicate isBlockchain(BlockChain bc;) = bc != null &*& bc.BlockchainInv(?h, ?hx, ?s, ?c);
     
-    predicate ValidTransactions(Transaction[] ts) = true;
+    predicate ValidTransactions(Transaction[] ts) = true; // Just a token
     
 @*/
-
-/*
-
-predicate validNextBlock(Block b, Block h, int s) =
-					    b != null
-					&*& h != null
-					&*& h.BlockInv(_, _, ?hp, _)
-					&*& b.BlockInv(h, hp, ?hx, _)
-					&*& hx % 100 == 0
-					&*& s % (BlockChain.SUMMARY_INTERVAL + 1) == 0 ? b.getClass() == SummaryBlock.class : b.getClass() == SimpleBlock.class;
-*/
 
 final class BlockChain {
 
@@ -45,6 +34,7 @@ final class BlockChain {
 				&*& this.size |-> s
 				&*& this.ch |-> c
 				&*& s > 0
+				
 				&*& len(c) == s
 				&*& h != null
 				&*& c != nill
@@ -105,7 +95,7 @@ final class BlockChain {
 	}
 
 
-	public boolean isNextSummary()
+	private boolean isNextSummary()
 	//@ requires BlockchainInv(?h, ?hx, ?s, ?c);
 	//@ ensures BlockchainInv(h, hx, s, c) &*& result ? (s % (BlockChain.SUMMARY_INTERVAL + 1) == 0) : (s % (BlockChain.SUMMARY_INTERVAL + 1) != 0);
 	{
@@ -119,99 +109,99 @@ final class BlockChain {
 		return this.head.hash();
 	}
 	
-	private static void aux(int[] a, int i, int v) 
-	/*@ requires 0 <= i &*& i < a.length
-			&*& array_slice(a, i, i+1, _);
-	@*/
-	//@ ensures array_slice(a, i, i+1, cons(v, nil));
-	{
-		a[i] = v;
-	}
-	
 	private boolean validTransactions(Transaction[] ts) 
-	/*@ requires BlockchainInv(?h, ?hp, ?s, ?c) &*& ValidSimple(ts, _);
+	/*@ requires BlockchainInv(?h, ?hp, ?s, ?c) &*& ValidSimple(ts, ?tx, ?hx);
 	@*/
-	//@ ensures BlockchainInv(h, hp, s, c) &*& ValidSimple(ts, _) &*& result ? ValidTransactions(ts) : true;
+	//@ ensures BlockchainInv(h, hp, s, c) &*& ValidSimple(ts, tx, hx) &*& result ? ValidTransactions(ts) : true;
 	{
 		int[] balances = this.getBalances();
 		
-		//@ open ValidSimple(ts, _);
+		//@ open ValidSimple(ts, tx, hx);
+		//@ assert array_slice_deep(ts, 0, ts.length, TransHash, unit, ?transactions, ?hashes);
 		for(int i = 0; i < ts.length; i++) 
 		/*@ invariant 0 <= i &*& i <= ts.length
 					&*& ValidSummary(balances) 
-					&*& array_slice(balances,0,balances.length,_)
+					&*& array_slice(balances,0,balances.length, ?items)
 					&*& ts != null 
 					&*& ts.length == Block.MAX_TX
-				        &*& array_slice_deep(ts, 0, ts.length, TransHash, unit, ?transactions, ?hashes);
+				        &*& array_slice_deep(ts, 0, ts.length, TransHash, unit, transactions, hashes);
 		@*/
 		{
-			//@ array_slice_deep_split(ts, 0, i);
-			//@ array_slice_deep_split(ts, i, i+1);
-			//@ array_slice_deep_open(ts, i);
+			// array_slice_deep_split(ts, 0, i);
+			// array_slice_deep_split(ts, i, i+1);
+			// array_slice_deep_open(ts, i);
+			Transaction t = ts[i];
+			if( t != null ) {
+				//@ assert array_element(ts, i, ?t_elem);
+				// open TransHash(?x, t, ?hash);
+				// open TransInv(ts[i], ?t_s, ?t_r, ?t_a);
+				//@ open TransInv(t, ?t_s, ?t_r, ?t_a);
 			
-			//@ open TransHash(?x, ts[i], ?hash);
-			//@ open TransInv(ts[i], ?t_s, ?t_r, ?t_a);
-			
-			int amount = ts[i].getAmount();
-			int sender = ts[i].getSender();
-			int receiver = ts[i].getReceiver();
-			
-			//@ close TransInv(ts[i], t_s, t_r, t_a);
-			//@ close TransHash(x, ts[i], hash);
-			
-			int tmp = ts[i].hash(); // aux to proof
-			//@ length_drop(i, hashes);
-			//@ take_one_more(i, hashes);
-			//@ assert array_slice_deep(ts,0,i,TransHash,unit,?lels,?lvls);
-			//@ assert array_slice_deep(ts,i+1,ts.length,TransHash,unit,?rels,?rvls);
-			//@ append_assoc(lels, cons(ts[i], nil), rels);
-			//@ append_assoc(lvls, cons(tmp, nil), rvls);
-			//@ array_slice_deep_close(ts, i, TransHash, unit);
-			//@ array_slice_deep_join(ts, 0);
-			//@ array_slice_deep_join(ts, 0);
-
-			//@ assert array_slice_deep(ts, 0, ts.length, TransHash, unit, ?transactions2, ?hashes2); // como assegurar que se manteve igual?
+				int amount = t.getAmount();
+				int sender = t.getSender();
+				int receiver = t.getReceiver();
 			
 			
-			//@ open ValidSummary(balances);
+				//@ open ValidSummary(balances);
+				//@ assert ValidID(sender) == true;
+				//@ assert ValidID(receiver) == true;
 			
-			//@ assert ValidID(sender) == true;
-			//@ assert ValidID(receiver) == true;
+				//balances[sender] -= amount;
+				//balances[receiver] += amount;
 			
-			//@ assert sender < balances.length &*& sender >= 0;
-			//@ assert receiver < balances.length &*& receiver >= 0;
+				//@ assert array_slice(balances, 0, balances.length, items);
+				//@ array_slice_split(balances, 0, sender);
+				//@ array_slice_split(balances, sender, sender+1);
+				//@ assert array_slice(balances, 0, sender, ?litems);
+				//@ assert array_slice(balances, sender, sender+1, _);
+				//@ assert array_slice(balances, sender+1, balances.length, ?ritems);
+				//balances[sender] -= amount;
+				int asd = balances[sender] - amount;
+				balances[sender] = asd;
+				//@ assert array_element(balances, sender, ?v);
+				//@ assert array_slice(balances, 0, sender, litems);
+				//@ assert array_slice(balances, sender, sender+1, cons(v, nil));
+				//@ assert array_slice(balances, sender+1, balances.length, ritems);
 			
-			//balances[sender] -= amount;
-			//balances[receiver] += amount;
+				//@ array_slice_join(balances, 0);
+				//@ array_slice_join(balances, 0);
+				//@ append_assoc(litems, cons(v, nil), ritems);
+				//@ assert array_slice(balances, 0, balances.length, append(append(litems, cons(v, nil)), ritems)); 
 			
-			//@ assert array_slice(balances, 0, balances.length, ?items);
-			//@ array_slice_split(balances, 0, sender);
-			//@ array_slice_split(balances, sender, sender+1);
-			//@ assert array_slice(balances, 0, sender, ?litems);
-			//@ assert array_slice(balances, sender, sender+1, _);
-			//@ assert array_slice(balances, sender+1, balances.length, ?ritems);
-			//balances[sender] -= amount;
-			//aux(balances, sender, balances[sender] - amount);
-			int asd = balances[sender] - amount;
-			balances[sender] = asd;
-			//@ assert array_element(balances, sender, ?v);
-			// int v = balances[sender]; 
-			//@ assert array_slice(balances, 0, sender, litems);
-			//@ assert array_slice(balances, sender, sender+1, cons(v, nil)); // como e' que e' verdade ????
-			//@ assert array_slice(balances, sender+1, balances.length, ritems);
+				//@ array_slice_split(balances, 0, receiver);
+				//@ array_slice_split(balances, receiver, receiver+1);
+				//@ assert array_slice(balances, 0, receiver, ?litems2);
+				//@ assert array_slice(balances, receiver, receiver+1, _);
+				//@ assert array_slice(balances, receiver+1, balances.length, ?ritems2);
+				asd = balances[receiver] + amount;
+				balances[receiver] = asd;
+				//@ assert array_element(balances, receiver, ?v2);
+				//@ assert array_slice(balances, 0, receiver, litems2);
+				//@ assert array_slice(balances, receiver, receiver+1, cons(v2, nil));
+				//@ assert array_slice(balances, receiver+1, balances.length, ritems2);
 			
-			//@ append_assoc(litems, cons(v, nil), ritems);
+				//@ array_slice_join(balances, 0);
+				//@ array_slice_join(balances, 0);
+				//@ append_assoc(litems2, cons(v, nil), ritems2);
+				//@ assert array_slice(balances, 0, balances.length, append(append(litems2, cons(v2, nil)), ritems2)); 
 			
-			//@ array_slice_join(balances, 0);
-			//@ array_slice_join(balances, 0);
-			//@ assert array_slice(balances, 0, balances.length, ?new_items); // como provar que o new items mudou so uma coisa
-			//@ assert true;
-			
-			aux(balances, receiver, balances[receiver] - amount);
-			
-			
-			// array_slice_deep_close(ts, i);
-			//@ close ValidSummary(balances);
+				//@ close ValidSummary(balances);
+				
+				//@ close TransInv(t, t_s, t_r, t_a);
+				//@ close TransHash(unit, t, tansactionHash(t_s,t_r,t_a));
+			}
+					
+				
+				int tmp = (t==null) ? 0 : t.hash(); // aux to proof
+				//@ length_drop(i, hashes);
+				//@ take_one_more(i, hashes);
+				//@ assert array_slice_deep(ts,0,i,TransHash,unit,?lels,?lvls);
+				//@ assert array_slice_deep(ts,i+1,ts.length,TransHash,unit,?rels,?rvls);
+				//@ append_assoc(lels, cons(ts[i], nil), rels);
+				//@ append_assoc(lvls, cons(tmp, nil), rvls);
+				//@ array_slice_deep_close(ts, i, TransHash, unit);
+				//@ array_slice_deep_join(ts, 0);
+				//@ array_slice_deep_join(ts, 0);
 		}
 		
 		for(int i = 0; i < balances.length; i++) 
@@ -232,6 +222,7 @@ final class BlockChain {
 	/*@ requires BlockchainInv(?h, hp, ?s, ?c) &*& ts.length == Block.MAX_TX 
 				&*& array_slice_deep(ts,0,ts.length,TransHash,unit, ?els, ?vls) 
 				&*& ValidNonce(nonce, hp, sum(vls)) 
+				&*& ValidTransactions(ts)
 				//&*& s % (BlockChain.SUMMARY_INTERVAL + 1) != 0
 				&*& [_]System.out |-> ?o &*& o != null; @*/
 	//@ ensures o != null &*& result ? BlockchainInv(?b, _, s+1, conc(c, b)) : (BlockchainInv(h, hp, s, c) &*& array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls) );
@@ -239,37 +230,18 @@ final class BlockChain {
 		if(this.head.hash() != hp)
 			return false;
 		
-		//@ assert array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls);
-		
+		//@ assert ValidTransactions(ts);
 		SimpleBlock b = new SimpleBlock(this.head, nonce, ts);
 		//@ assert b.BlockInv(h, hp, ?hx1, nonce);
-		
-		int i = 0;
-		boolean valid = true;
-		while( i < Block.MAX_ID && valid )
-		//@ invariant i >= 0 &*& i <= Block.MAX_ID &*& b.BlockInv(h, hp, hx1, nonce);
-		{
-			valid = valid && b.balanceOf(i) >= 0;
-			i++;
-		}
-
-		if(valid) {
-			this.head = b;
-			this.size++;
-			//@ this.ch = conc(c, b);
+		this.head = b;
+		this.size++;
+		//@ this.ch = conc(c, b);
 			
-			//@ close BlockchainInv(b, _, s+1, conc(c, b));
+		//@ close BlockchainInv(b, _, s+1, conc(c, b));
 			
-			log(this.size, "Simple");
-		} else {
-			//@ open b.BlockInv(h, hp, hx1, nonce);
-			//@ close BlockchainInv(h, hp, s, c);
-			
-			//@ assert b.transactions == ts;
-			//@ assert array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls);
-		}
-
-		return valid;
+		log(this.size, "Simple");
+	
+		return true;
 	}
 	
 	private void appendSummary() 
@@ -322,40 +294,45 @@ final class BlockChain {
 	
 	public boolean appendBlock(Transaction[] ts) 
 	/*@ requires BlockchainInv(?h, ?hp, ?s, ?c) 
-				&*& ValidSimple(ts, ?vls)
+				&*& ValidSimple(ts, ?elms, ?vls)
 				&*& [_]System.out |-> ?o &*& o != null; @*/
-	/*@ ensures o != null &*& 
-			result ? 
-				( (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) == 0 ? 
-					BlockchainInv(?b2, _, s+2, conc(conc(c, _), b2)) 
-				      : BlockchainInv(?b, _, s+1, conc(c, b)) )
-				: (BlockchainInv(h, hp, s, c) &*& ValidSimple(ts, vls));
+	/*@ ensures o != null 
+				&*& result ? 
+					( (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) == 0 ? 
+						BlockchainInv(?b2, _, s+2, conc(conc(c, _), b2)) 
+					      : BlockchainInv(?b, _, s+1, conc(c, b)) )
+					: (BlockchainInv(h, hp, s, c) &*& ValidSimple(ts, elms, vls));
 	@*/
 	{
-		//@ open ValidSimple(ts, vls);
+		//@ open ValidSimple(ts, elms, vls);
 		
 		int hash_previous = this.headHash();
 		
-		int nonce = SimpleBlock.mine(hash_previous, ts);
+		boolean valid = this.validTransactions(ts);
 		
-		boolean status = this.appendSimple(hash_previous, nonce, ts);
+		if(valid) {
+			//@ assert ValidTransactions(ts);
+			int nonce = SimpleBlock.mine(hash_previous, ts);
 		
-		if(status) {
-			if(this.isNextSummary()) {
-				//@ assert (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) == 0;
-				this.appendSummary();
-				//@ close BlockchainInv(?b2, _, s+2, conc(conc(c, _), b2));
-			} else {
-				//@ assert (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) != 0;
-				//@ assert this.head |-> ?b;
-				//@ close BlockchainInv(b, _, s+1, conc(c, b));
+			boolean status = this.appendSimple(hash_previous, nonce, ts);
+		
+			if(status) {
+				if(this.isNextSummary()) {
+					//@ assert (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) == 0;
+					this.appendSummary();
+					//@ assert this.head |-> ?b;
+					//@ close BlockchainInv(b, _, s+2, conc(conc(c, _), b));
+				} else {
+					//@ assert (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) != 0;
+					//@ assert this.head |-> ?b;
+					//@ close BlockchainInv(b, _, s+1, conc(c, b));
+				}
+				
+				return true;
 			}
-		} else {
-			// open b
-			return false;
-		}
-		
-        	return true;
+		} 
+		//@ close ValidSimple(ts, elms, vls);
+		return false;
 	}
 	
 	public int balanceOf(int id)

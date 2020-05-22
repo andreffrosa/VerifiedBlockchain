@@ -48,10 +48,10 @@ Note: please add your names and student numbers in all files you submit.
 
 	predicate isBlock(Block b;int h) = b == null ? h == 0 : b.BlockInv(_, _, h, _);
 
-	predicate TransHash(unit a, Transaction t; int hash) =
-		    t != null
-		&*& TransInv(t, ?s, ?r, ?v)
-		&*& hash == tansactionHash(s,r,v);
+	predicate TransHash(unit a, Transaction t; int hash) = (t == null) ? (emp &*& hash == 0) : (TransInv(t, ?s, ?r, ?v) &*& hash == tansactionHash(s,r,v));
+	//	    t != null
+	//	&*& TransInv(t, ?s, ?r, ?v)
+	//	&*& hash == tansactionHash(s,r,v);
 
 	fixpoint boolean ValidID(int id) {
 		return 0 <= id && id < Block.MAX_ID;

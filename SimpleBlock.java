@@ -20,8 +20,8 @@ Note: please add your names and student numbers in all files you submit.
 */
 
 /*@
-	predicate ValidSimple(Transaction[] ts; list<int> hashes) = ts != null &*& ts.length == Block.MAX_TX
-				      &*& array_slice_deep(ts, 0, ts.length, TransHash, unit, ?transactions, hashes);
+	predicate ValidSimple(Transaction[] ts; list<Transaction> transactions, list<int> hashes) = ts != null &*& ts.length == Block.MAX_TX
+				      &*& array_slice_deep(ts, 0, ts.length, TransHash, unit, transactions, hashes);
 @*/
 
 final class SimpleBlock implements Block {
@@ -50,8 +50,9 @@ final class SimpleBlock implements Block {
 			&*& hash == sum(take(i,vls));
 		@*/
 		{
+			
 			Transaction one = ts[i];
-			int tmp = one.hash();
+			int tmp = (one == null) ? 0 : one.hash();
 			hash = hash + tmp;
 			// Code necessary to deal with reestablishing
 			// the array_slice_deep predicate.
@@ -65,6 +66,7 @@ final class SimpleBlock implements Block {
 			//@ array_slice_deep_close(ts, i, TransHash, unit);
 			//@ array_slice_deep_join(ts, 0);
 			//@ array_slice_deep_join(ts, 0);
+			
 			i++;
 		}
 		return hash;
@@ -78,7 +80,7 @@ final class SimpleBlock implements Block {
 	public SimpleBlock(Block previous, int r, Transaction ts[])
 	/*@ requires 
 		    isBlock(previous, ?h) 
-		&*& ValidSimple(ts, ?hashes)
+		&*& ValidSimple(ts, _, ?hashes)
 		&*& ValidNonce(r, h, sum(hashes));
 	@*/
 	//@ ensures BlockInv(previous,h,_,r) &*& ValidNonce(r, h, sum(hashes));
@@ -112,12 +114,14 @@ final class SimpleBlock implements Block {
 		@*/
 		{
 			Transaction t = transactions[i];
-			int tmp = t.hash();
+			int tmp = (t == null) ? 0 : t.hash();
+			if(t != null) {
 			if(t.getSender() == id) {
-				delta -= t.getAmount();
-			}//two ifs instead of if else allows to deal with transfers between the same ID (A -> A)
-			if (t.getReceiver() == id) {
-				delta += t.getAmount();
+					delta -= t.getAmount();
+				}//two ifs instead of if else allows to deal with transfers between the same ID (A -> A)
+				if (t.getReceiver() == id) {
+					delta += t.getAmount();
+				}
 			}
 			// Code necessary to deal with reestablishing
 			// the array_slice_deep predicate.
