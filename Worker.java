@@ -55,8 +55,8 @@ public class Worker /*implements Runnable*/ {
 		if(!status) {
 			for(int j = 0; j < Block.MAX_TX; j++ ) 
 			/*@ invariant 0 <= j &*& j <= Block.MAX_TX 
-					&*& array_slice_deep(ts, j, ts.length, TransHash, unit, ?trans, ?hx)
-					&*& array_slice(ts,0,j,_);
+					&*& array_slice_deep(ts, j+1, ts.length, TransHash, unit, ?trans, ?hx)
+					&*& array_slice(ts,0,j,_); // como fazer isto?
 			
 			@*/
 			{

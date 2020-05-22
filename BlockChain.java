@@ -121,7 +121,7 @@ final class BlockChain {
 	
 	private static void aux(int[] a, int i, int v) 
 	/*@ requires 0 <= i &*& i < a.length
-			&*& array_slice(a, i, i+1, ?items);
+			&*& array_slice(a, i, i+1, _);
 	@*/
 	//@ ensures array_slice(a, i, i+1, cons(v, nil));
 	{
@@ -190,7 +190,10 @@ final class BlockChain {
 			//@ assert array_slice(balances, 0, sender, ?litems);
 			//@ assert array_slice(balances, sender, sender+1, _);
 			//@ assert array_slice(balances, sender+1, balances.length, ?ritems);
-			balances[sender] -= amount;
+			//balances[sender] -= amount;
+			//aux(balances, sender, balances[sender] - amount);
+			int asd = balances[sender] - amount;
+			balances[sender] = asd;
 			//@ assert array_element(balances, sender, ?v);
 			// int v = balances[sender]; 
 			//@ assert array_slice(balances, 0, sender, litems);
