@@ -20,6 +20,7 @@
 
     predicate isBlockchain(BlockChain bc;) = bc != null &*& bc.BlockchainInv(?h, ?hx, ?s, ?c);
     
+    predicate ValidTransactions(Transaction[] ts) = true;
     
 @*/
 
@@ -117,6 +118,112 @@ final class BlockChain {
 	{
 		return this.head.hash();
 	}
+	
+	private static void aux(int[] a, int i, int v) 
+	/*@ requires 0 <= i &*& i < a.length
+			&*& array_slice(a, i, i+1, ?items);
+	@*/
+	//@ ensures array_slice(a, i, i+1, cons(v, nil));
+	{
+		a[i] = v;
+	}
+	
+	private boolean validTransactions(Transaction[] ts) 
+	/*@ requires BlockchainInv(?h, ?hp, ?s, ?c) &*& ValidSimple(ts, _);
+	@*/
+	//@ ensures BlockchainInv(h, hp, s, c) &*& ValidSimple(ts, _) &*& result ? ValidTransactions(ts) : true;
+	{
+		int[] balances = this.getBalances();
+		
+		//@ open ValidSimple(ts, _);
+		for(int i = 0; i < ts.length; i++) 
+		/*@ invariant 0 <= i &*& i <= ts.length
+					&*& ValidSummary(balances) 
+					&*& array_slice(balances,0,balances.length,_)
+					&*& ts != null 
+					&*& ts.length == Block.MAX_TX
+				        &*& array_slice_deep(ts, 0, ts.length, TransHash, unit, ?transactions, ?hashes);
+		@*/
+		{
+			//@ array_slice_deep_split(ts, 0, i);
+			//@ array_slice_deep_split(ts, i, i+1);
+			//@ array_slice_deep_open(ts, i);
+			
+			//@ open TransHash(?x, ts[i], ?hash);
+			//@ open TransInv(ts[i], ?t_s, ?t_r, ?t_a);
+			
+			int amount = ts[i].getAmount();
+			int sender = ts[i].getSender();
+			int receiver = ts[i].getReceiver();
+			
+			//@ open ValidSummary(balances);
+			
+			//@ assert ValidID(sender) == true;
+			//@ assert ValidID(receiver) == true;
+			
+			//@ assert sender < balances.length &*& sender >= 0;
+			//@ assert receiver < balances.length &*& receiver >= 0;
+			
+			//balances[sender] -= amount;
+			//balances[receiver] += amount;
+			
+			//@ assert array_slice(balances, 0, balances.length, ?items);
+			//@ array_slice_split(balances, 0, sender);
+			//@ array_slice_split(balances, sender, sender+1);
+			//@ assert array_slice(balances, 0, sender, ?litems);
+			//@ assert array_slice(balances, sender, sender+1, _);
+			//@ assert array_slice(balances, sender+1, balances.length, ?ritems);
+			balances[sender] -= amount;
+			//@ assert array_element(balances, sender, ?v);
+			// int v = balances[sender]; 
+			//@ assert array_slice(balances, 0, sender, litems);
+			//@ assert array_slice(balances, sender, sender+1, cons(v, nil)); // como e' que e' verdade ????
+			//@ assert array_slice(balances, sender+1, balances.length, ritems);
+			
+			//@ append_assoc(litems, cons(v, nil), ritems);
+			
+			//@ array_slice_join(balances, 0);
+			//@ array_slice_join(balances, 0);
+			//@ assert array_slice(balances, 0, balances.length, litems);
+			//@ assert true;
+			
+			aux(balances, receiver, balances[receiver] - amount);
+			
+			//@ close ValidSummary(balances);
+			
+			//@ close TransInv(ts[i], t_s, t_r, t_a);
+			//@ close TransHash(x, ts[i], hash);
+			
+			int tmp = t.hash();
+			//@ length_drop(i, hashes);
+			//@ take_one_more(i, hashes);
+			//@ assert array_slice_deep(ts,0,i,TransHash,unit,?lels,?lvls);
+			//@ assert array_slice_deep(ts,i+1,ts.length,TransHash,unit,?rels,?rvls);
+			//@ append_assoc(lels, cons(ts[i], nil), rels);
+			//@ append_assoc(lvls, cons(tmp, nil), rvls);
+			//@ array_slice_deep_close(ts, i, TransHash, unit);
+			//@ array_slice_deep_join(ts, 0);
+			//@ array_slice_deep_join(ts, 0);
+			
+
+			
+			// array_slice_deep_close(ts, i);
+			//@ close ValidSummary(balances);
+		}
+		
+		for(int i = 0; i < balances.length; i++) 
+		/*@ invariant 0 <= i &*& i <= balances.length
+					&*& ValidSummary(balances) 
+					&*& array_slice(balances,0,balances.length,_);
+		@*/
+		{
+			if( balances[i] < 0 ) {
+				return false;
+			}
+		}
+		//@ close ValidTransactions(ts);
+		return true;
+	}
 
 	private boolean appendSimple(int hp, int nonce, Transaction[] ts) 
 	/*@ requires BlockchainInv(?h, hp, ?s, ?c) &*& ts.length == Block.MAX_TX 
@@ -187,7 +294,7 @@ final class BlockChain {
 
 	public int[] getBalances()
 	//@ requires BlockchainInv(?h, ?hx, ?s, ?c);
-	//@ ensures BlockchainInv(h, hx, s, c) &*& ValidSummary(result) &*& array_slice(result,0,result.length,_) ; 
+	//@ ensures BlockchainInv(h, hx, s, c) &*& ValidSummary(result) &*& array_slice(result,0,result.length,_); 
 	{
 		int[] balances = new int[Block.MAX_ID];
 		for(int i = 0; i < Block.MAX_ID; i++) 
