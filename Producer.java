@@ -2,7 +2,7 @@
 
 public class Producer {
 
-	public static final int MAX_SLEEP = 20;
+	public static final int MAX_SLEEP = 10;
 	public static final int TRANSFERENCE_FACTOR = 15; 
 
 	public Producer() 

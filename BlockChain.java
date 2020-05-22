@@ -129,6 +129,8 @@ final class BlockChain {
 		if(this.head.hash() != hp)
 			return false;
 		
+		//@ assert array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls);
+		
 		SimpleBlock b = new SimpleBlock(this.head, nonce, ts);
 		//@ assert b.BlockInv(h, hp, ?hx1, nonce);
 		
@@ -137,7 +139,7 @@ final class BlockChain {
 		while( i < Block.MAX_ID && valid )
 		//@ invariant i >= 0 &*& i <= Block.MAX_ID &*& b.BlockInv(h, hp, hx1, nonce);
 		{
-			valid = valid && b.balanceOf(i) > 0;
+			valid = valid && b.balanceOf(i) >= 0;
 			i++;
 		}
 
@@ -151,8 +153,9 @@ final class BlockChain {
 			log(this.size, "Simple");
 		} else {
 			//@ open b.BlockInv(h, hp, hx1, nonce);
-			
 			//@ close BlockchainInv(h, hp, s, c);
+			
+			//@ assert b.transactions == ts;
 			//@ assert array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls);
 		}
 

@@ -1,0 +1,19 @@
+package java.time.format;
+
+import java.time.*;
+
+class DateTimeFormatter {
+
+    static DateTimeFormatter ofPattern(String pattern);
+    //@ requires true;
+    //@ ensures true;
+    //@ terminates;
+    
+    String format(LocalDateTime t);
+    //@ requires true;
+    //@ ensures true;
+    //@ terminates;
+
+}
+
+

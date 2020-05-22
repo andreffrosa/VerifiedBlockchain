@@ -1,0 +1,11 @@
+
+package java.time;
+
+class LocalDateTime {
+
+    public static LocalDateTime now();
+    //@ requires true;
+    //@ ensures true;
+    //@ terminates;
+
+}

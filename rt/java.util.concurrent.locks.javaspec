@@ -1,0 +1,98 @@
+package java.util.concurrent.locks;
+
+/*@
+
+predicate enter_lck(real p, predicate() inv) = inv() ;
+predicate lck(Lock s; real p, predicate() inv);
+predicate set_cond(predicate() inv, predicate() p) = true;
+predicate cond(Condition c; predicate() inv, predicate() p);
+
+predicate enter_rwlck(predicate() inv) = inv() ;
+predicate rwlck(ReentrantReadWriteLock s; predicate() inv);
+predicate rlck(Lock s; real p, predicate() inv);
+predicate wlck(Lock s; real p, predicate() inv);
+
+
+@*/
+
+public interface Lock {
+
+
+}        
+
+
+public class ReentrantLock implements Lock {
+
+    public ReentrantLock();
+        //@ requires enter_lck(1,?inv);
+        //@ ensures lck(this, 1, inv);
+
+    public void lock();
+        //@ requires [?f]lck(this, ?p, ?inv);
+        //@ ensures ([f]lck(this, -p, inv)) &*& [p]inv();
+
+    public void unlock();
+        //@ requires [?f]lck(this, ?p, ?inv) &*& [-p]inv();
+        //@ ensures [f]lck(this, -p, inv);
+
+    public Condition newCondition();
+        //@ requires lck(this, 1, ?inv) &*& set_cond(inv, ?pred);
+        //@ ensures lck(this, 1, inv) &*& result != null &*& cond(result,inv,pred);
+
+}
+
+public interface Condition {
+
+    public void await();
+        //@ requires [?f]cond(this,?inv,?pred) &*& inv();
+        //@ ensures [f]cond(this,inv,pred) &*& pred();
+
+    public void signal();
+        //@ requires [?f]cond(this,?inv,?pred) &*& pred();
+        //@ ensures [f]cond(this,inv,pred) &*& inv();
+
+}
+
+
+public class ReadLock implements Lock {
+
+    public void lock();
+        //@ requires [?f]rlck(this, ?p, ?inv);
+        //@ ensures ([f]rlck(this, -p, inv)) &*& [?q]inv() &*& q < 1;
+
+    public void unlock();
+        //@ requires [?f]rlck(this, ?p, ?inv) &*& [?q]inv();
+        //@ ensures [f]rlck(this, -p, inv);
+
+}
+
+public class WriteLock implements Lock {
+
+    public void lock();
+        //@ requires [?f]wlck(this, 1, ?inv);
+        //@ ensures [f]wlck(this, 0, inv) &*& inv();
+
+    public void unlock();
+        //@ requires [?f]wlck(this, 0, ?inv) &*& inv();
+        //@ ensures [f]wlck(this, 1, inv);
+    
+    public Condition newCondition();
+        //@ requires wlck(this, 1, ?inv) &*& set_cond(inv, ?pred);
+        //@ ensures  wlck(this, 1, inv) &*& result != null &*& cond(result,inv,pred);
+}
+
+public class ReentrantReadWriteLock {
+
+    public ReentrantReadWriteLock();
+        //@ requires enter_rwlck(?inv);
+        //@ ensures rwlck(this,inv);
+
+    public ReadLock readLock();
+        //@ requires [1/2] rwlck(?t,?inv);
+        //@ ensures rlck(result, 1, inv)  &*& result != null;
+
+    public WriteLock writeLock();
+        //@ requires [1/2] rwlck(?t,?inv);
+        //@ ensures wlck(result, 1, inv) &*& result != null;
+
+}

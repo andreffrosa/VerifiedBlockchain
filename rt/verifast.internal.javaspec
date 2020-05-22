@@ -1,0 +1,39 @@
+package verifast.internal;
+
+public class FloatingPoint {
+
+    public static double double_of_real(real r);
+        //@ requires true;
+        //@ ensures true;
+        //@ terminates;
+
+    public static double double_lt(double x, double y);
+        //@ requires true;
+        //@ ensures true;
+        //@ terminates;
+
+    public static double double_le(double x, double y);
+        //@ requires true;
+        //@ ensures true;
+        //@ terminates;
+        
+    public static double double_ge(double x, double y);
+        //@ requires true;
+        //@ ensures true;
+        //@ terminates;
+
+    public static double double_of_int(int r);
+        //@ requires true;
+        //@ ensures true;  
+        //@ terminates;  
+        
+    public static double double_mul(double x, double y);
+        //@ requires true;
+        //@ ensures true;
+        //@ terminates;
+        
+    public static int int_of_double(double x);
+        //@ requires true;
+        //@ ensures true;
+        //@ terminates;
+}
