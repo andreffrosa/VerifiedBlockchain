@@ -25,8 +25,8 @@ public class Util {
     //@ requires 0 <= min &*& min <= max;
     //@ ensures min <= result &*& result <= max;
     {
-	Random r = new Random();
-	return min + (r.nextInt() % (max-min+1));
+	Random rand = new Random();
+	return min + rand.nextInt(max-min+1);
     }
 
 }

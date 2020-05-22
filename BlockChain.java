@@ -61,9 +61,13 @@ final class BlockChain {
 	//@ requires b != null &*& [_]System.out |-> ?o &*& o != null;
 	//@ ensures o != null;
 	{
-		System.out.print("["+Util.time()+"] " + (size<10 ? "  " : size<100 ? " " : ""));
-		System.out.print(size);
-		System.out.println(" : " + b);
+		String txt = "["+Util.time()+"] "
+			   + "Block "
+		           + (size < 10 ? "  " : size < 100 ? " " : "")
+		           + String.valueOf(size)
+		           + " : " + b;
+		           
+		System.out.println(txt);
 	}
 
 	public BlockChain(int[] initial_balances)

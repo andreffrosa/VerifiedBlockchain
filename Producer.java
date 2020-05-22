@@ -1,34 +1,21 @@
 
 
-public class Producer  /*implements Runnable*/ {
+public class Producer {
 
-	/*
-		predicate ProducerInv() =
-				    this.queue |-> ?q
-				&*& this.b_chain |-> ?bc
-				&*& isBlockchain(bc)
-				&*& q != null &*& CQueueInv(q);
-	
-
-	private CQueue queue;
-	private BlockChain b_chain;*/
+	public static final int MAX_SLEEP = 20;
+	public static final int TRANSFERENCE_FACTOR = 15; 
 
 	public Producer() 
-	// requires isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
-	// ensures WorkerInv() // isto nao vai impedir depois criar outros workers a apontar para o mesmo sitio e ate impedir usar a bchain na main?
-	// ensures isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue);
 	//@ requires true;
 	//@ ensures true;
 	{
-		//this.queue = queue;
-		//this.b_chain = b_chain;
 	}
 
 	public void produce(CQueue queue, BlockChain b_chain) 
 	//@ requires isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue) &*& [_]System.out |-> ?o &*& o != null;
 	//@ ensures isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue) &*& o != null;
 	{
-		double ratio = Client.TRANSFERENCE_FACTOR * 0.01;
+		double ratio = TRANSFERENCE_FACTOR * 0.01;
 		
 		int counter = 0; 
 		while( counter < Block.MAX_TX )
@@ -46,6 +33,8 @@ public class Producer  /*implements Runnable*/ {
 				queue.enqueue( new Transaction(sender, receiver, amount) );
 				
 				counter++;
+				
+				try{ Thread.sleep(Util.randomInt(0, MAX_SLEEP)); } catch(InterruptedException e) {}
 			}
 		}
 	}

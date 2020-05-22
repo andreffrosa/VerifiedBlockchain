@@ -4,7 +4,6 @@
 public class Client {
 
     public static final int INITIAL_BALANCE = 100;
-    public static final int TRANSFERENCE_FACTOR = 15; 
     public static final int ITERATIONS = 110;
     public static final int QUEUE_SIZE = 150;
 
@@ -57,14 +56,14 @@ public class Client {
 		&*& array_slice(balances,0,balances.length,_); 
 	@*/
 	{ 
-		//System.out.printf("% 3d : % 3d \n", j, balances[j]);
-		System.out.print("    ");
-		System.out.print((j<10 ? "  " : j<100 ? " " : ""));
-		System.out.print(j);
-		System.out.print(" | ");
-		System.out.print((balances[j]<10 ? "  " : balances[j]<100 ? " " : ""));
-		System.out.print(balances[j]);
-		System.out.print("/n");
+		String txt = "    "
+		           + (j < 10 ? "  " : j < 100 ? " " : "")
+		           + String.valueOf(j)
+		           + " | "
+		           + (balances[j] < 10 ? "  " : balances[j] < 100 ? " " : "")
+		           + String.valueOf(balances[j]);
+		           
+		System.out.println(txt);
 	}
     }
 }
