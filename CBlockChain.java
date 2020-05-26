@@ -49,8 +49,8 @@ final class BlockChain {
 	//@ private chain ch; // ghost var
 
 	private static void log(int size, String b) 
-	//@ requires b != null &*& [_]System.out |-> ?o &*& o != null;
-	//@ ensures o != null;
+	//@ requires b != null &*& [_]System_out(?o) &*& o != null;
+	//@ ensures [_]System_out(o) &*& o != null;
 	{
 		String txt = "["+Util.time()+"] "
 			   + "Block "
@@ -249,9 +249,9 @@ final class BlockChain {
 				&*& ValidSummary(balances)
 				&*& ValidNonce(nonce, hp, sum(vls))
 				&*& s % (BlockChain.SUMMARY_INTERVAL + 1) == 0
-				&*& [_]System.out |-> ?o &*& o != null; 
+				&*& [_]System_out(?o) &*& o != null; 
 	@*/
-	//@ ensures o != null &*& BlockchainInv(?b, _, s+1, conc(c, b));
+	//@ ensures [_]System_out(o) &*& o != null &*& BlockchainInv(?b, _, s+1, conc(c, b));
 	{
 		/*
 		int[] balances = this.getBalances();
@@ -391,9 +391,9 @@ final class CBlockChain {
 
 	public CBlockChain(int[] initial_balances)
 	/*@ requires ValidSummary(initial_balances) &*& array_slice_deep(initial_balances,0,initial_balances.length,Positive,unit, ?els, ?vls) 
-		&*& [_]System.out |-> ?o &*& o != null;
+		&*& [_]System_out(?o) &*& o != null;
 	@*/
-	//@ ensures [1]CBlockchainInv() &*& o != null;
+	//@ ensures [1]CBlockchainInv() &*& [_]System_out(o) &*& o != null;
 	{
 		b_chain = new BlockChain(initial_balances);
 		//@ close CBlockchain_shared_state(this)();
@@ -449,8 +449,8 @@ final class CBlockChain {
 	}
 	
 	private void appendSummary() 
-	//@ requires [?f]CBlockchainInv() &*& [_]System.out |-> ?o &*& o != null;
-	//@ ensures [f]CBlockchainInv() &*& o != null;
+	//@ requires [?f]CBlockchainInv() &*& [_]System_out(?o) &*& o != null;
+	//@ ensures [f]CBlockchainInv() &*& [_]System_out(o) &*& o != null;
 	{
 		mon.lock();
 	    	//@ open CBlockchain_shared_state(this)();
@@ -462,7 +462,7 @@ final class CBlockChain {
 			  &*& l != null
 			  &*& bc.BlockchainInv(?h, ?hx, ?s, ?c)
 			  &*& [f]lck(l, -1, CBlockchain_shared_state(this))
-			  &*& [_]System.out |-> ?o2 &*& o2 != null;
+			  &*& [_]System_out(o) &*& o != null;
 		@*/
 		{
 			// @ assert (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) == 0;	
@@ -496,22 +496,18 @@ final class CBlockChain {
 	
 	public boolean appendBlock(Transaction[] ts) 
 	/*@ requires [?f]CBlockchainInv() &*& ValidSimple(ts, ?elms, ?vls)
-				&*& [_]System.out |-> ?o &*& o != null;
+				&*& [_]System_out(?o) &*& o != null;
 	@*/
-	/*@ ensures [f]CBlockchainInv() &*& o != null &*& result ? true : ValidSimple(ts, elms, vls);
-	@*/
+	//@ ensures [f]CBlockchainInv() &*& [_]System_out(o) &*& o != null &*& result ? true : ValidSimple(ts, elms, vls);
 	{
 		appendSummary();
 		
-		boolean valid = false;
-		int hash_previous = -1;
-		
 		mon.lock();
 	    	//@ open CBlockchain_shared_state(this)();
-		valid = b_chain.validTransactions(ts);
+		boolean valid = b_chain.validTransactions(ts);
 		
 		if(valid) {
-			hash_previous = b_chain.headHash();
+			int hash_previous = b_chain.headHash();
 			//@ close CBlockchain_shared_state(this)();
 			mon.unlock();
 			

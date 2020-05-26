@@ -140,7 +140,21 @@ class CQueue {
   {
     mon.lock();
     //@ open CQueue_shared_state(this)();
-    if( q.isFull() ) {
+    while( q.isFull() )
+    /*@ invariant this.q |-> ?cq 
+	      &*& [f]this.mon |-> ?l
+	      &*& [f]this.notempty |-> ?ce
+	      &*& [f]this.notfull |-> ?cf
+	      &*& cq != null
+	      &*& l != null
+	      &*& ce != null
+	      &*& cf != null
+              &*& QueueInv(cq,P,_,_)
+              &*& [f]lck(l, -1, CQueue_shared_state(this))
+              &*& [f]cond(ce, CQueue_shared_state(this), CQueue_nonempty(this))
+              &*& [f]cond(cf, CQueue_shared_state(this), CQueue_nonfull(this));
+      @*/
+    {
       //@ close CQueue_shared_state(this)();
       try { notfull.await(); } catch(InterruptedException e) {}
       //@ open CQueue_nonfull(this)();
@@ -158,7 +172,21 @@ class CQueue {
   {
     mon.lock();
     //@ open CQueue_shared_state(this)();
-    if( q.isEmpty() ) {
+    while( q.isEmpty() )
+    /*@ invariant this.q |-> ?cq 
+	      &*& [f]this.mon |-> ?l
+	      &*& [f]this.notempty |-> ?ce
+	      &*& [f]this.notfull |-> ?cf
+	      &*& cq != null
+	      &*& l != null
+	      &*& ce != null
+	      &*& cf != null
+              &*& QueueInv(cq,P,_,_)
+              &*& [f]lck(l, -1, CQueue_shared_state(this))
+              &*& [f]cond(ce, CQueue_shared_state(this), CQueue_nonempty(this))
+              &*& [f]cond(cf, CQueue_shared_state(this), CQueue_nonfull(this));
+      @*/
+    {
       //@ close CQueue_shared_state(this)();
       try { notempty.await(); } catch(InterruptedException e) {}
       //@ open CQueue_nonempty(this)();
