@@ -371,7 +371,7 @@ public class System {
 
 //@ fixpoint list<char> charsOfString(String s);
 
-public class String{
+public class String {
 
     public String();
         //@ requires emp;
@@ -447,6 +447,10 @@ public class Thread {
     void setPriority(int newPriority);
         //@ requires Thread(?r, false);
         //@ ensures Thread(r, false);
+        
+    static void sleep(int millis);
+        //@ requires true;
+        //@ ensures true;
     
 }
 
