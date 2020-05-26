@@ -182,11 +182,11 @@ final class SimpleBlock implements Block {
 		return ((txHash ^ hp) ^ r);
 	}
 	
-	public static int mine(int hp, Transaction[] ts) 
+	public static int mine(int hp, Transaction[] ts, int start) 
 	//@ requires ts.length == Block.MAX_TX &*& array_slice_deep(ts,0,ts.length,TransHash,unit, ?els, ?vls);
 	//@ ensures array_slice_deep(ts,0,ts.length,TransHash,unit, els, vls) &*& ValidNonce(result, hp, sum(vls));
 	{
-		int r = 0;
+		int r = start;
 		while( hash(hp, r, ts) % 100 != 0 ) 
 		//@ invariant array_slice_deep(ts, 0, ts.length, TransHash, unit, els, vls);
 		{

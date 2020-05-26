@@ -2,7 +2,7 @@ Block.java
 SimpleBlock.java
 SummaryBlock.java
 Transaction.java
-BlockChain.java
+CBlockChain.java
 Main.java
 Worker.java
 CQueue.java

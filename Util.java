@@ -22,11 +22,19 @@ public class Util {
 
 	
     public static int randomInt(int min, int max) 
-    //@ requires 0 <= min &*& min <= max;
+    //@ requires min <= max;
     //@ ensures min <= result &*& result <= max;
     {
 	Random rand = new Random();
 	return min + rand.nextInt(max-min+1);
+    }
+    
+    public static int randomInt() 
+    //@ requires true;
+    //@ ensures true;
+    {
+	Random rand = new Random();
+	return rand.nextInt();
     }
 
 }

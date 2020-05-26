@@ -1,11 +1,22 @@
 
 //import verifast.internal.*;
 
+/*@
+predicate queue_frac(real f) = true;
+
+predicate b_chain_frac(real f) = true;
+@*/
+
 public class Main {
 
     public static final int INITIAL_BALANCE = 100;
     public static final int ITERATIONS = 110;
-    public static final int QUEUE_SIZE = 150;
+    public static final int QUEUE_SIZE = 300;
+    
+    public static final int N_WORKERS = 10;
+    public static final int N_PRODUCERS = 20;
+    
+    public static final int SLEEP_INTERVAL = 60*1000; 
 
     public static void main(String[] args)
     //@ requires [_]System.out |-> ?o &*& o != null;
@@ -24,31 +35,72 @@ public class Main {
         }
         //@ close ValidSummary(initial_balances);
         
-        BlockChain b_chain = new BlockChain(initial_balances);
+        CBlockChain b_chain = new CBlockChain(initial_balances);
 
 	// Transaction Queue
 	CQueue queue = new CQueue(QUEUE_SIZE);
 
-	// Producer
-	Producer p1 = new Producer();
-
-	// Worker
-	Worker w1 = new Worker();
-
-	// Append new Blocks to the blockchain
-	for(int i = 0; i < ITERATIONS; i++) 
-	//@ invariant 0 <= i &*& i <= ITERATIONS &*& isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue) &*& [_]System.out |-> o &*& o != null;
+	// Create Producers
+	//@ close queue_frac(1/2);
+	//@ close b_chain_frac(1/2);
+	for(int i = 0; i < N_PRODUCERS; i++) 
+	/*@ invariant b_chain_frac(?bf) &*& [bf]isCBlockchain(b_chain) 
+		  &*& queue_frac(?qf) &*& [qf]isCQueue(queue) 
+		  &*& [_]System.out |-> o &*& o != null;
+	@*/
 	{
-		// Produce some new transactions
-		p1.produce(queue, b_chain);
+		//@ open queue_frac(qf);
+		//@ close queue_frac(qf/2);
+		//@ open b_chain_frac(bf);
+		//@ close b_chain_frac(bf/2);
 		
-		// Consume
-		w1.work(queue, b_chain);
+		Producer p = new Producer(queue, b_chain);
+		new Thread(p).start();
+		
+		//@ close queue_frac(qf/4);
+		//@ close b_chain_frac(bf/4);
 	}
+
+	// Create Workers
+	for(int i = 0; i < N_WORKERS; i++) 
+	/*@ invariant b_chain_frac(?bf) &*& [bf]isCBlockchain(b_chain) 
+		  &*& queue_frac(?qf) &*& [qf]isCQueue(queue) 
+		  &*& [_]System.out |-> o &*& o != null;
+	@*/
+	{
+		//@ open queue_frac(qf);
+		//@ close queue_frac(qf/2);
+		//@ open b_chain_frac(bf);
+		//@ close b_chain_frac(bf/2);
+		
+		Worker w = new Worker(queue, b_chain);
+		new Thread(w).start();
+		
+		//@ close queue_frac(qf/4);
+		//@ close b_chain_frac(bf/4);
+	}
+
+	while(true) 
+	/*@ invariant b_chain_frac(?bf) &*& [bf]isCBlockchain(b_chain) 
+		  &*& [_]System.out |-> o &*& o != null;
+	@*/
+	{
+		// Print all the balances
+		//int[] balances = b_chain.getBalances();
+		//printBalances(balances);
+		
+		// @ close [bf]isCBlockchain(b_chain);
 	
-	// Print all the balances
-	System.out.println("\nBalances\nAccount | Coins");
-	int[] balances = b_chain.getBalances();
+		// try{ Thread.sleep( SLEEP_INTERVAL ); } catch(InterruptedException e) {}	
+	}
+
+    }
+    
+    private static void printBalances(int[] balances) 
+    //@ requires array_slice(balances,0,balances.length,_) &*& [_]System.out |-> ?o &*& o != null;
+    //@ ensures array_slice(balances,0,balances.length,_) &*& o != null;
+    {
+    	System.out.println("\nBalances\nAccount | Coins");
 	//@ assert array_slice(balances,0,balances.length,_);
 	for(int j = 0; j < balances.length; j++) 
 	/*@ invariant 0 <= j &*& j <= balances.length

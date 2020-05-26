@@ -89,6 +89,8 @@ class Queue {
 
 /*@
 
+predicate isCQueue(CQueue q;) = q != null &*& CQueueInv(q);
+
 predicate_ctor CQueue_shared_state(CQueue cq)() = cq.q |-> ?q &*& q != null &*& QueueInv(q,P,_,_);
 
 predicate_ctor CQueue_nonempty(CQueue cq)() = cq.q |-> ?q &*& q != null &*& QueueInv(q,P,?n,_) &*& n > 0;
@@ -120,7 +122,7 @@ class CQueue {
 
   CQueue(int size)
   //@ requires size > 0;
-  //@ ensures CQueueInv(this);
+  //@ ensures [1]CQueueInv(this);
   {
     q = new Queue(size);
     //@ close CQueue_shared_state(this)();
@@ -133,8 +135,8 @@ class CQueue {
   }
 
   void enqueue(Transaction t)  
-  //@ requires CQueueInv(this) &*& t != null &*& TransInv(t, ?s, ?r, ?v);
-  //@ ensures CQueueInv(this);
+  //@ requires [?f]CQueueInv(this) &*& t != null &*& TransInv(t, ?s, ?r, ?v);
+  //@ ensures [f]CQueueInv(this);
   {
     mon.lock();
     //@ open CQueue_shared_state(this)();
@@ -151,8 +153,8 @@ class CQueue {
   }
 
   Transaction dequeue() 
-  //@ requires CQueueInv(this);
-  //@ ensures CQueueInv(this) &*& result != null &*& TransInv(result, ?s, ?r, ?v);
+  //@ requires [?f]CQueueInv(this);
+  //@ ensures [f]CQueueInv(this) &*& result != null &*& TransInv(result, ?s, ?r, ?v);
   {
     mon.lock();
     //@ open CQueue_shared_state(this)();

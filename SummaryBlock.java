@@ -154,11 +154,11 @@ final class SummaryBlock implements Block {
 		return ((balHash ^ hp) ^ r);
 	}
 	
-	public static int mine(int hp, int[] balances) 
+	public static int mine(int hp, int[] balances, int start) 
 	//@ requires balances.length == Block.MAX_ID &*& array_slice(balances, 0, balances.length, ?items);
 	//@ ensures array_slice(balances, 0, balances.length, items) &*& ValidNonce(result, hp, sum(items));
 	{
-		int r = 0;
+		int r = start;
 		while( hash(hp, r, balances) % 100 != 0 ) 
 		//@ invariant balances.length == Block.MAX_ID &*& array_slice(balances, 0, balances.length, items);
 		{
