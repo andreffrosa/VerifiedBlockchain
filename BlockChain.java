@@ -359,8 +359,6 @@ final class BlockChain {
 
 predicate_ctor CBlockchain_shared_state(CBlockChain cb)() = cb.b_chain |-> ?bc &*& bc != null &*& bc.BlockchainInv(?h, ?hx, ?s, ?c);
 
-predicate_ctor CBlockchain_wait_summary(CBlockChain cb)() = cb.b_chain |-> ?bc &*& bc != null &*& bc.BlockchainInv(?h, ?hx, ?s, ?c) &*& (s % (BlockChain.SUMMARY_INTERVAL + 1) != 0);
-
 @*/
 
 class CBlockChain {
@@ -369,19 +367,15 @@ class CBlockChain {
 
 	predicate CBlockchainInv() =
 		this.mon |-> ?l
-	    &*& this.wait_summary |-> ?cs
 		
 	    &*& l != null
-	    &*& cs != null
 
-	    &*& lck(l, 1, CBlockchain_shared_state(this))
-	    &*& cond(cs, CBlockchain_shared_state(this), CBlockchain_wait_summary(this));
+	    &*& lck(l, 1, CBlockchain_shared_state(this));
 	    
 	@*/
 	
 	private BlockChain b_chain;
 	private ReentrantLock mon;
-	private Condition wait_summary;
 
 	public CBlockChain(int[] initial_balances)
 	/*@ requires ValidSummary(initial_balances) &*& array_slice_deep(initial_balances,0,initial_balances.length,Positive,unit, ?els, ?vls) 
@@ -393,8 +387,6 @@ class CBlockChain {
 		//@ close CBlockchain_shared_state(this)();
 		//@ close enter_lck(1, CBlockchain_shared_state(this));
 		mon = new ReentrantLock();
-		//@ close set_cond(CBlockchain_shared_state(this), CBlockchain_wait_summary(this));
-		wait_summary = mon.newCondition();
 		//@ close CBlockchainInv();
 	}
 
@@ -456,18 +448,6 @@ class CBlockChain {
 		
 		mon.lock();
 	    	//@ open CBlockchain_shared_state(this)();
-	    	while( b_chain.isNextSummary() ) 
-	    	/*@ invariant b_chain |-> ?bc &*& bc != null &*& bc.BlockchainInv(?h, ?hx, ?s, ?c)
-	    			&*& this.wait_summary |-> ?cs
-				&*& cs != null
-				&*& cond(cs, CBlockchain_shared_state(this), CBlockchain_wait_summary(this));
-	    	@*/
-	    	{
-	    		//@ close CBlockchain_shared_state(this)();
-		      	wait_summary.await();
-		      	//@ open CBlockchain_wait_summary(this)();
-		}
-		
 		valid = b_chain.validTransactions(ts);
 		
 		if(valid) {
@@ -495,8 +475,6 @@ class CBlockChain {
 		    		isNextSummary = b_chain.isNextSummary();
 		    		
 				if(isNextSummary) {
-					//@ close CBlockchain_wait_summary(this)();
-					wait_summary.signal();
 				
 					// @ assert (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) == 0;
 					b_chain.appendSummary();
