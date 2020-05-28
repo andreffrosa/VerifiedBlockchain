@@ -31,22 +31,22 @@ final class SimpleBlock implements Block {
 		&*& this.hashPrevious |-> hp
 		&*& this.random |-> r
 		&*& this.transactions |-> ?a
-		&*& isBlock(p,hp)
+		&*& [_]isBlock(p,hp)
 		&*& array_slice_deep(a,0,a.length,TransHash,unit,?transactions,?hashes)
 		&*& h == hashOf3(sum(hashes),hp,r)
 		&*& h % 100 == 0;
 	@*/
 
 	static int hashTransactions(Transaction[] ts)
-	//@requires array_slice_deep(ts, 0, ts.length, TransHash, unit, ?els, ?vls);
-	//@ensures array_slice_deep(ts, 0, ts.length, TransHash, unit, els, vls) &*& result == sum(vls);
+	//@requires [?f]array_slice_deep(ts, 0, ts.length, TransHash, unit, ?els, ?vls);
+	//@ensures [f]array_slice_deep(ts, 0, ts.length, TransHash, unit, els, vls) &*& result == sum(vls);
 	{
 		int hash = 0;
 		int i = 0;
 		while(i < ts.length)
 		/*@ invariant
 		        0 <= i &*& i <= ts.length
-			&*& array_slice_deep(ts,0,ts.length,TransHash,unit,els,vls)
+			&*& [f]array_slice_deep(ts,0,ts.length,TransHash,unit,els,vls)
 			&*& hash == sum(take(i,vls));
 		@*/
 		{
@@ -59,14 +59,15 @@ final class SimpleBlock implements Block {
 			// This formulation is not optimal, will be improved.
 			//@ length_drop(i, vls);
 			//@ take_one_more(i, vls);
-			//@ assert array_slice_deep(ts,0,i,TransHash,unit,?lels,?lvls);
-			//@ assert array_slice_deep(ts,i+1,ts.length,TransHash,unit,?rels,?rvls);
+			//@ assert [f]array_slice_deep(ts,0,i,TransHash,unit,?lels,?lvls);
+			//@ assert [f]array_slice_deep(ts,i+1,ts.length,TransHash,unit,?rels,?rvls);
 			//@ append_assoc(lels, cons(one, nil), rels);
 			//@ append_assoc(lvls, cons(tmp, nil), rvls);
 			//@ array_slice_deep_close(ts, i, TransHash, unit);
-			//@ array_slice_deep_join(ts, 0);
-			//@ array_slice_deep_join(ts, 0);
-			
+			// @ array_slice_deep_join(ts, 0);
+			// @ array_slice_deep_join(ts, 0);
+			//@ array_slice_deep_join_precise(f, ts, 0, i, TransHash, unit, i+1);
+			//@ array_slice_deep_join_precise(f, ts, 0, i+1, TransHash, unit, ts.length);
 			i++;
 		}
 		return hash;
@@ -79,37 +80,37 @@ final class SimpleBlock implements Block {
 
 	public SimpleBlock(Block previous, int r, Transaction ts[])
 	/*@ requires 
-		    isBlock(previous, ?h) 
+		    [?f]isBlock(previous, ?h) 
 		&*& ValidSimple(ts, _, ?hashes)
 		&*& ValidNonce(r, h, sum(hashes));
 	@*/
-	//@ ensures BlockInv(previous,h,_,r) &*& ValidNonce(r, h, sum(hashes));
+	//@ ensures [1]BlockInv(previous,h,_,r) &*& ValidNonce(r, h, sum(hashes));
 	{
 		//@ open ValidNonce(r, h, sum(hashes));
-		//@ open isBlock(previous, h);
+		//@ open [f]isBlock(previous, h);
 		this.previous = previous;
 		this.hashPrevious = previous == null ? 0 : previous.hash();
 		this.random = r;
 		this.transactions = ts;
-		//@ close isBlock(previous, h);
+		//@ close [f]isBlock(previous, h);
 		//@ close ValidNonce(r, h, sum(hashes));
 		
-		//@ assert isBlock(previous, h);
+		//@ assert [f]isBlock(previous, h);
 	}
 
 	public int balanceOf(int id)
-	//@ requires BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
-	//@ ensures BlockInv(p, hp, h, r);
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
+	//@ ensures [f]BlockInv(p, hp, h, r);
 	{
 		int delta = 0;
 		int i = 0;
-		//@ open BlockInv(p, hp, h, r);
-		//@ assert this.transactions |-> ?ts;
-		//@ assert array_slice_deep(ts, 0, ts.length, TransHash, unit, ?els, ?vls);
+		//@ open [f]BlockInv(p, hp, h, r);
+		//@ assert [f]this.transactions |-> ?ts;
+		//@ assert [f]array_slice_deep(ts, 0, ts.length, TransHash, unit, ?els, ?vls);
 		while(i < transactions.length)
 		/*@ invariant
-				this.transactions |-> ts
-			&*& array_slice_deep(ts, 0, ts.length, TransHash, unit, els, vls)
+				[f]this.transactions |-> ts
+			&*& [f]array_slice_deep(ts, 0, ts.length, TransHash, unit, els, vls)
 			&*& 0 <= i &*& i <= ts.length;
 		@*/
 		{
@@ -128,13 +129,15 @@ final class SimpleBlock implements Block {
 			// This formulation is not optimal, will be improved.
 			//@ length_drop(i, vls);
 			//@ take_one_more(i, vls);
-			//@ assert array_slice_deep(ts,0,i,TransHash,unit,?lels,?lvls);
-			//@ assert array_slice_deep(ts,i+1,ts.length,TransHash,unit,?rels,?rvls);
+			//@ assert [f]array_slice_deep(ts,0,i,TransHash,unit,?lels,?lvls);
+			//@ assert [f]array_slice_deep(ts,i+1,ts.length,TransHash,unit,?rels,?rvls);
 			//@ append_assoc(lels, cons(t, nil), rels);
 			//@ append_assoc(lvls, cons(tmp, nil), rvls);
 			//@ array_slice_deep_close(ts, i, TransHash, unit);
-			//@ array_slice_deep_join(ts, 0);
-			//@ array_slice_deep_join(ts, 0);
+			// @ array_slice_deep_join(ts, 0);
+			// @ array_slice_deep_join(ts, 0);
+			//@ array_slice_deep_join_precise(f, ts, 0, i, TransHash, unit, i+1);
+			//@ array_slice_deep_join_precise(f, ts, 0, i+1, TransHash, unit, ts.length);
 			i = i + 1;
 		}
 
@@ -146,30 +149,30 @@ final class SimpleBlock implements Block {
 	}
 
 	public Block getPrevious()
-	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-	//@ ensures BlockInv(p, hp, h, r) &*& result == p;
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == p;
 	{
 		return previous;
 	}
 
 	public int getPreviousHash()
-	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-	//@ ensures BlockInv(p, hp, h, r) &*& result == hp;
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == hp;
 	{
 		return hashPrevious;
 	}
 
 	public int hash()
-	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-	//@ ensures BlockInv(p, hp, h, r) &*& result == h;
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == h;
 	{
 		int txHash = hashTransactions(transactions);
 		return ((txHash ^ this.hashPrevious) ^ this.random);
 	}
 
 	public int getRandom()
-    	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-    	//@ ensures BlockInv(p, hp, h, r) &*& result == r;
+    	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+    	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == r;
 	{
 		return this.random;
 	}

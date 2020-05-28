@@ -39,7 +39,7 @@ class Transaction {
 
     public Transaction(int send, int recv, int amount)
     //@ requires amount > 0 &*& ValidID(send) == true &*& ValidID(recv) == true;
-    //@ ensures TransInv(this, send, recv, amount);
+    //@ ensures [1]TransInv(this, send, recv, amount);
     {
         this.send = send;
         this.recv = recv;
@@ -47,29 +47,29 @@ class Transaction {
     }
 
     public int getSender()
-    //@requires TransInv(this, ?s, ?r, ?v);
-    //@ensures TransInv(this, s, r, v) &*& result == s;
+    //@requires [?f]TransInv(this, ?s, ?r, ?v);
+    //@ensures [f]TransInv(this, s, r, v) &*& result == s;
     {
         return send;
     }
 
     public int getReceiver()
-    //@requires TransInv(this, ?s, ?r, ?v);
-    //@ensures TransInv(this, s, r, v) &*& result == r;
+    //@requires [?f]TransInv(this, ?s, ?r, ?v);
+    //@ensures [f]TransInv(this, s, r, v) &*& result == r;
     {
         return recv;
     }
 
     public int getAmount()
-    //@requires TransInv(this, ?s, ?r, ?v);
-    //@ensures TransInv(this, s, r, v) &*& result == v;
+    //@requires [?f]TransInv(this, ?s, ?r, ?v);
+    //@ensures [f]TransInv(this, s, r, v) &*& result == v;
     {
         return amnt;
     }
 
     public int hash()
-    //@requires TransInv(this, ?s, ?r, ?v);
-    //@ensures TransInv(this, s, r, v) &*& result == tansactionHash(s,r,v);
+    //@requires [?f]TransInv(this, ?s, ?r, ?v);
+    //@ensures [f]TransInv(this, s, r, v) &*& result == tansactionHash(s,r,v);
     {
     	int x = send ^ recv ^ amnt;
         return x;

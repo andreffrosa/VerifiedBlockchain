@@ -33,7 +33,7 @@ final class SummaryBlock implements Block {
 		&*& this.hashPrevious |-> hp
 		&*& this.random |-> r
 		&*& this.balances |-> ?a
-		&*& isBlock(p,hp)
+		&*& [_]isBlock(p,hp)
 		&*& array_slice(a,0,a.length,?items)
 		&*& ValidSummary(a)
 		&*& h == hashOf3(sum(items),hp, r)
@@ -47,12 +47,12 @@ final class SummaryBlock implements Block {
 
 	public SummaryBlock(Block previous, int r, int balances[])
 	/*@ requires
-		    isBlock(previous, ?h)
+		    [?f]isBlock(previous, ?h)
 		&*& array_slice(balances,0,balances.length,?vls)
 		&*& ValidSummary(balances)
 		&*& ValidNonce(r, h, sum(vls));
 	@*/
-	//@ ensures BlockInv(previous, h, _, r) &*& ValidNonce(r, h, sum(vls));
+	//@ ensures [1]BlockInv(previous, h, _, r) &*& ValidNonce(r, h, sum(vls));
 	{
 		//@ open ValidNonce(r, h, sum(vls));
 		//@ open isBlock(previous, h);
@@ -64,54 +64,54 @@ final class SummaryBlock implements Block {
 	}
 
 	public int balanceOf(int id)
-	//@ requires BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
-	//@ ensures BlockInv(p, hp, h, r);
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
+	//@ ensures [f]BlockInv(p, hp, h, r);
 	{
 		if(id >= balances.length || id < 0)
 			return -1;
 		else {
 			int bal = balances[id];
-			//@ assert this.balances |-> ?b;
-			//@ assert array_slice (b, 0, b.length, ?elems);
+			//@ assert [f]this.balances |-> ?b;
+			//@ assert [f]array_slice (b, 0, b.length, ?elems);
 			//@ bal == nth(id, elems);
 			return bal;
 		}
 	}
 
 	public Block getPrevious()
-	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-	//@ ensures BlockInv(p, hp, h, r) &*& result == p;
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == p;
 	{
 		return previous;
 	}
 
 	public int getPreviousHash()
-	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-	//@ ensures BlockInv(p, hp, h, r) &*& result == hp;
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == hp;
 	{
 		return hashPrevious;
 	}
 
 	public int hash()
-	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-	//@ ensures BlockInv(p, hp, h, r) &*& result == h;
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == h;
 	{
 		int balHash = 0;
 		int i = 0;
 
-		//@ open BlockInv(p, hp, h, r);
-		//@ assert this.balances |-> ?b;
-		//@ assert array_slice(b, 0, b.length, ?items);
-		//@ assert this.random |-> r;
+		//@ open [f]BlockInv(p, hp, h, r);
+		//@ assert [f]this.balances |-> ?b;
+		//@ assert [f]array_slice(b, 0, b.length, ?items);
+		//@ assert [f]this.random |-> r;
 		while(i < balances.length)
 		/*@ invariant
-				this.balances |-> b
-			&*& this.previous |-> p
-			&*& this.hashPrevious |-> hp
-			&*& this.random |-> r
+				[f]this.balances |-> b
+			&*& [f]this.previous |-> p
+			&*& [f]this.hashPrevious |-> hp
+			&*& [f]this.random |-> r
 			&*& 0 <= i &*& i <= b.length
-			&*& isBlock(p,hp)
-			&*& array_slice(b, 0, b.length, items)
+			&*& [_]isBlock(p,hp)
+			&*& [f]array_slice(b, 0, b.length, items)
 			&*& balHash == sum(take(i,items));
 		@*/
 		{
@@ -125,8 +125,8 @@ final class SummaryBlock implements Block {
 	}
 
 	public int getRandom()
-    	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-    	//@ ensures BlockInv(p, hp, h, r) &*& result == r;
+    	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+    	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == r;
 	{
 		return this.random;
 	}

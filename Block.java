@@ -78,23 +78,23 @@ interface Block {
 	static final int MAX_TX = 100;
 
 	int balanceOf(int id);
-	//@ requires BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
-	//@ ensures BlockInv(p, hp, h, r);
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r) &*& ValidID(id) == true;
+	//@ ensures [f]BlockInv(p, hp, h, r);
 
 	Block getPrevious();
-	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-	//@ ensures BlockInv(p, hp, h, r) &*& result == p;
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == p;
 
 	int getPreviousHash();
-	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-	//@ ensures BlockInv(p, hp, h, r) &*& result == hp;
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == hp;
 
 	int hash();
-	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-	//@ ensures BlockInv(p, hp, h, r) &*& result == h;
+	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == h;
 
     	int getRandom();
-    	//@ requires BlockInv(?p, ?hp, ?h, ?r);
-    	//@ ensures BlockInv(p, hp, h, r) &*& result == r;
+    	//@ requires [?f]BlockInv(?p, ?hp, ?h, ?r);
+    	//@ ensures [f]BlockInv(p, hp, h, r) &*& result == r;
     
 }

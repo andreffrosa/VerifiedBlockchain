@@ -88,22 +88,22 @@ final class BlockChain {
 	}
 
 	public int getSize()
-	//@ requires BlockchainInv(?h, ?hx, ?s, ?c);
-	//@ ensures BlockchainInv(h, hx, s, c) &*& result == s &*& result == len(c);
+	//@ requires [?f]BlockchainInv(?h, ?hx, ?s, ?c);
+	//@ ensures [f]BlockchainInv(h, hx, s, c) &*& result == s &*& result == len(c);
 	{
 		return this.size;
 	}
 
 	protected boolean isNextSummary()
-	//@ requires BlockchainInv(?h, ?hx, ?s, ?c);
-	//@ ensures BlockchainInv(h, hx, s, c) &*& result ? (s % (BlockChain.SUMMARY_INTERVAL + 1) == 0) : (s % (BlockChain.SUMMARY_INTERVAL + 1) != 0);
+	//@ requires [?f]BlockchainInv(?h, ?hx, ?s, ?c);
+	//@ ensures [f]BlockchainInv(h, hx, s, c) &*& result ? (s % (BlockChain.SUMMARY_INTERVAL + 1) == 0) : (s % (BlockChain.SUMMARY_INTERVAL + 1) != 0);
 	{
 		return this.size % (BlockChain.SUMMARY_INTERVAL + 1) == 0;
 	}
 	
 	protected int headHash() 
-	//@ requires BlockchainInv(?h, ?hx, ?s, ?c);
-	//@ ensures BlockchainInv(h, hx, s, c) &*& result == hx;
+	//@ requires [?f]BlockchainInv(?h, ?hx, ?s, ?c);
+	//@ ensures [f]BlockchainInv(h, hx, s, c) &*& result == hx;
 	{
 		return this.head.hash();
 	}
@@ -244,7 +244,7 @@ final class BlockChain {
 	}
 	
 	protected void appendSummary(int hp, int nonce, int[] balances)
-	/*@ requires BlockchainInv(?h, hp, ?s, ?c) 
+	/*@ requires [1]BlockchainInv(?h, hp, ?s, ?c) 
 				&*& array_slice(balances,0,balances.length,?vls)
 				&*& ValidSummary(balances)
 				&*& ValidNonce(nonce, hp, sum(vls))
@@ -271,23 +271,24 @@ final class BlockChain {
 	}
 
 	public int[] getBalances()
-	//@ requires BlockchainInv(?h, ?hx, ?s, ?c);
-	//@ ensures BlockchainInv(h, hx, s, c) &*& ValidSummary(result) &*& array_slice(result,0,result.length,_); 
+	//@ requires [?f]BlockchainInv(?h, ?hx, ?s, ?c);
+	//@ ensures [f]BlockchainInv(h, hx, s, c) &*& ValidSummary(result) &*& array_slice(result,0,result.length,_); 
 	{
 		int[] balances = new int[Block.MAX_ID];
 		for(int i = 0; i < Block.MAX_ID; i++) 
 		/*@ invariant 0 <= i &*& i <= Block.MAX_ID 
 				//&*& array_slice_deep(balances, 0, i, Positive, unit, ?elems, ?vls)
 				&*& array_slice(balances,0,balances.length,_) 
-				&*& BlockchainInv(h, hx, s, c);
+				&*& [f]BlockchainInv(h, hx, s, c);
 		@*/
 		{
-			//@ open BlockchainInv(h, hx, s, c);
+			//@ open [f]BlockchainInv(h, hx, s, c);
+			//@ assume(f==1); // Just to not modify the Block
 			balances[i] = this.head.balanceOf(i);
 		
-			//@ close BlockchainInv(h, hx, s, c);
+			//@ close [f]BlockchainInv(h, hx, s, c);
 		}
-		//@ assert BlockchainInv(h, hx, s, c);
+		//@ assert [f]BlockchainInv(h, hx, s, c);
 		
 		//@ assert array_slice(balances,0,balances.length,_);
 		
@@ -296,9 +297,10 @@ final class BlockChain {
 	}
 	
 	public int balanceOf(int id)
-	//@ requires BlockchainInv(?h, ?hx, ?s, ?c) &*& ValidID(id) == true;
-	//@ ensures BlockchainInv(h, hx, s, c);
+	//@ requires [?f]BlockchainInv(?h, ?hx, ?s, ?c) &*& ValidID(id) == true;
+	//@ ensures [f]BlockchainInv(h, hx, s, c);
 	{
+		//@ assume(f==1);
 		return this.head.balanceOf(id);
 	}
 	
@@ -381,13 +383,13 @@ final class CBlockChain {
 		this.mon |-> ?l
 		
 	    &*& l != null
-
-	    &*& lck(l, 1, CBlockchain_shared_state(this));
+	    &*& MRSWLockInv(l)
+	    &*& mrswlck(l, 1, CBlockchain_shared_state(this));
 	    
 	@*/
 	
 	private BlockChain b_chain;
-	private ReentrantLock mon;
+	private MRSWLock mon;
 
 	public CBlockChain(int[] initial_balances)
 	/*@ requires ValidSummary(initial_balances) &*& array_slice_deep(initial_balances,0,initial_balances.length,Positive,unit, ?els, ?vls) 
@@ -397,8 +399,8 @@ final class CBlockChain {
 	{
 		b_chain = new BlockChain(initial_balances);
 		//@ close CBlockchain_shared_state(this)();
-		//@ close enter_lck(1, CBlockchain_shared_state(this));
-		mon = new ReentrantLock();
+		//@ close enter_mrswlck(1, CBlockchain_shared_state(this));
+		mon = new MRSWLock();
 		//@ close CBlockchainInv();
 	}
 
@@ -407,13 +409,13 @@ final class CBlockChain {
 	//@ ensures [f]CBlockchainInv() &*& result > 0; // &*& result == s &*& result == len(c); ---> o que acontece a isto?
 	{
 		int size = 0;
-		mon.lock();
-    		//@ open CBlockchain_shared_state(this)();
+		mon.readLock();
+    		//@ open [?q]CBlockchain_shared_state(this)();
 		size = b_chain.getSize();
 		//@ open b_chain.BlockchainInv(_, _, _, _);
 		//@ assert size > 0;
-		//@ close CBlockchain_shared_state(this)();
-		mon.unlock();
+		//@ close [q]CBlockchain_shared_state(this)();
+		mon.readUnlock();
 		
 		return size;
 	}
@@ -423,13 +425,13 @@ final class CBlockChain {
 	//@ ensures [f]CBlockchainInv() &*& ValidSummary(result) &*& array_slice(result,0,result.length,_); 
 	{
 		int[] balances = null;
-		mon.lock();
-    		//@ open CBlockchain_shared_state(this)();
+		mon.readLock();
+    		//@ open [?q]CBlockchain_shared_state(this)();
     		balances = b_chain.getBalances();
     		//@ assert ValidSummary(balances);
     		//@ assert array_slice(balances,0,balances.length,_);
-    		//@ close CBlockchain_shared_state(this)();
-		mon.unlock();
+    		//@ close [q]CBlockchain_shared_state(this)();
+		mon.readUnlock();
 		
 		return balances;
 	}
@@ -439,11 +441,11 @@ final class CBlockChain {
 	//@ ensures [f]CBlockchainInv();
 	{
 		int balance = 0;
-		mon.lock();
-    		//@ open CBlockchain_shared_state(this)();
+		mon.readLock();
+    		//@ open [?q]CBlockchain_shared_state(this)();
     		balance = b_chain.balanceOf(id);
-    		//@ close CBlockchain_shared_state(this)();
-		mon.unlock();
+    		//@ close [q]CBlockchain_shared_state(this)();
+		mon.readUnlock();
 		
 		return balance;
 	}
@@ -452,16 +454,17 @@ final class CBlockChain {
 	//@ requires [?f]CBlockchainInv() &*& [_]System_out(?o) &*& o != null;
 	//@ ensures [f]CBlockchainInv() &*& [_]System_out(o) &*& o != null;
 	{
-		mon.lock();
-	    	//@ open CBlockchain_shared_state(this)();
+		mon.readLock();
+	    	//@ open [?q]CBlockchain_shared_state(this)();
 		
 		while(b_chain.isNextSummary()) 
-		/*@ invariant b_chain |-> ?bc 
+		/*@ invariant [q]b_chain |-> ?bc 
 			  &*& [f]mon |-> ?l
 			  &*& bc != null 
 			  &*& l != null
-			  &*& bc.BlockchainInv(?h, ?hx, ?s, ?c)
-			  &*& [f]lck(l, -1, CBlockchain_shared_state(this))
+			  &*& [q]bc.BlockchainInv(?h, ?hx, ?s, ?c)
+			  &*& [f]mrswlck(l, -1, CBlockchain_shared_state(this))
+			  &*& [f]MRSWLockInv(l)
 			  &*& [_]System_out(o) &*& o != null;
 		@*/
 		{
@@ -470,16 +473,23 @@ final class CBlockChain {
 			//@ open ValidSummary(balances);
 			int hash_previous = b_chain.headHash();	
 					
-			//@ close CBlockchain_shared_state(this)();
-			mon.unlock();
+			//@ close [q]CBlockchain_shared_state(this)();
+			mon.readUnlock();
 					
 			int nonce = SummaryBlock.mine(hash_previous, balances, Util.randomInt());
 					
-			mon.lock();
+			mon.writeLock();
+			
 	    		//@ open CBlockchain_shared_state(this)();
 	    		if(hash_previous == b_chain.headHash() && b_chain.isNextSummary())
 				b_chain.appendSummary(hash_previous, nonce, balances);
-					
+			//@ close CBlockchain_shared_state(this)();
+			mon.writeUnlock();
+			
+			
+			mon.readLock();
+			//@ open [?q2]CBlockchain_shared_state(this)();
+			
 			// @ assert this.head |-> ?b;
 			// @ close BlockchainInv(b, _, s+2, conc(conc(c, _), b));
 		} 
@@ -491,7 +501,7 @@ final class CBlockChain {
 		// }
 				
 		//@ close CBlockchain_shared_state(this)();
-		mon.unlock();
+		mon.readUnlock();
 	}
 	
 	public boolean appendBlock(Transaction[] ts) 
