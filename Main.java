@@ -13,9 +13,8 @@ predicate NotNull(unit a, String t; unit b) = (t != null) &*& b == unit;
 public class Main {
 
     public static final int INITIAL_BALANCE = 100;
-    public static final int ITERATIONS = 110;
+
     public static final int QUEUE_SIZE = 300;
-    
     public static final int N_WORKERS = 10;
     public static final int N_PRODUCERS = 20;
     
@@ -25,8 +24,10 @@ public class Main {
     //@ requires [_]System.out |-> ?o &*& o != null &*& array_slice_deep(args,0,args.length,NotNull,unit,_,_);
     //@ ensures true;
     {
+        // Parameters
         int n_producers = N_PRODUCERS;
         int n_workers = N_WORKERS;
+        int queue_size = QUEUE_SIZE;
         
         if(args.length > 0) {
         	for(int i = 0; i < args.length - 1; i++) 
@@ -36,10 +37,14 @@ public class Main {
 					n_producers = Integer.parseInt(args[i+1]);
 				else if(args[i].equals("-w"))
 					n_workers = Integer.parseInt(args[i+1]);
+				else if(args[i].equals("-q"))
+					queue_size = Integer.parseInt(args[i+1]);
         	}
         }
         System.out.println("#Producers = " + Integer.toString(n_producers));
         System.out.println("#Workers = " + Integer.toString(n_workers));
+        System.out.println("#Queue = " + Integer.toString(queue_size));
+        System.out.println("");
         
         // Create a blockchain with an initial block
         int[] initial_balances = new int[Block.MAX_ID];
