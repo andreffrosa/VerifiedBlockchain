@@ -30,7 +30,7 @@ public class Util {
     }
     
     public static int randomInt() 
-    //@ requires true;
+    //@ requires true; 
     //@ ensures true;
     {
 	Random rand = new Random();
