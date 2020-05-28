@@ -5,6 +5,9 @@
 predicate queue_frac(real f) = true;
 
 predicate b_chain_frac(real f) = true;
+
+predicate NotNull(unit a, String t; unit b) = (t != null) &*& b == unit;
+
 @*/
 
 public class Main {
@@ -19,9 +22,25 @@ public class Main {
     public static final int SLEEP_INTERVAL = 60*1000; 
 
     public static void main(String[] args)
-    //@ requires [_]System.out |-> ?o &*& o != null;
+    //@ requires [_]System.out |-> ?o &*& o != null &*& array_slice_deep(args,0,args.length,NotNull,unit,_,_);
     //@ ensures true;
     {
+        int n_producers = N_PRODUCERS;
+        int n_workers = N_WORKERS;
+        
+        if(args.length > 0) {
+        	for(int i = 0; i < args.length - 1; i++) 
+        	//@ invariant 0 <= i &*& i < args.length &*& array_slice_deep(args,0,args.length,NotNull,unit,_,_);
+        	{
+				if(args[i].equals("-p"))
+					n_producers = Integer.parseInt(args[i+1]);
+				else if(args[i].equals("-w"))
+					n_workers = Integer.parseInt(args[i+1]);
+        	}
+        }
+        System.out.println("#Producers = " + Integer.toString(n_producers));
+        System.out.println("#Workers = " + Integer.toString(n_workers));
+        
         // Create a blockchain with an initial block
         int[] initial_balances = new int[Block.MAX_ID];
         
@@ -43,7 +62,7 @@ public class Main {
 	// Create Producers
 	//@ close queue_frac(1/2);
 	//@ close b_chain_frac(1/2);
-	for(int i = 0; i < N_PRODUCERS; i++) 
+	for(int i = 0; i < n_producers; i++) 
 	/*@ invariant b_chain_frac(?bf) &*& [bf]isCBlockchain(b_chain) 
 		  &*& queue_frac(?qf) &*& [qf]isCQueue(queue) 
 		  &*& [_]System.out |-> o &*& o != null;
@@ -62,7 +81,7 @@ public class Main {
 	}
 
 	// Create Workers
-	for(int i = 0; i < N_WORKERS; i++) 
+	for(int i = 0; i < n_workers; i++) 
 	/*@ invariant b_chain_frac(?bf) &*& [bf]isCBlockchain(b_chain) 
 		  &*& queue_frac(?qf) &*& [qf]isCQueue(queue) 
 		  &*& [_]System.out |-> o &*& o != null;

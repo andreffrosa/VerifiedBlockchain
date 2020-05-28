@@ -109,9 +109,9 @@ final class BlockChain {
 	}
 	
 	protected boolean validTransactions(Transaction[] ts) 
-	/*@ requires BlockchainInv(?h, ?hp, ?s, ?c) &*& ValidSimple(ts, ?tx, ?hx);
+	/*@ requires [?f]BlockchainInv(?h, ?hp, ?s, ?c) &*& ValidSimple(ts, ?tx, ?hx);
 	@*/
-	//@ ensures BlockchainInv(h, hp, s, c) &*& ValidSimple(ts, tx, hx) &*& result ? ValidTransactions(ts, hp) : true;
+	//@ ensures [f]BlockchainInv(h, hp, s, c) &*& ValidSimple(ts, tx, hx) &*& result ? ValidTransactions(ts, hp) : true;
 	{
 		int[] balances = this.getBalances();
 		
@@ -454,41 +454,53 @@ final class CBlockChain {
 	//@ requires [?f]CBlockchainInv() &*& [_]System_out(?o) &*& o != null;
 	//@ ensures [f]CBlockchainInv() &*& [_]System_out(o) &*& o != null;
 	{
-		mon.readLock();
-	    	//@ open [?q]CBlockchain_shared_state(this)();
+		//mon.readLock();
+	    	// @ open [?q]CBlockchain_shared_state(this)();
 		
-		while(b_chain.isNextSummary()) 
-		/*@ invariant [q]b_chain |-> ?bc 
-			  &*& [f]mon |-> ?l
-			  &*& bc != null 
-			  &*& l != null
-			  &*& [q]bc.BlockchainInv(?h, ?hx, ?s, ?c)
-			  &*& [f]mrswlck(l, -1, CBlockchain_shared_state(this))
-			  &*& [f]MRSWLockInv(l)
+		mon.readLock();
+	    	//@ open [?q1]CBlockchain_shared_state(this)();
+		boolean isNextSummary = b_chain.isNextSummary();
+		//@ close [q1]CBlockchain_shared_state(this)();
+		mon.readUnlock();
+		
+		while(isNextSummary) 
+		/*@ invariant [f]CBlockchainInv()
 			  &*& [_]System_out(o) &*& o != null;
 		@*/
 		{
+			mon.readLock();
+	    		//@ open [?q2]CBlockchain_shared_state(this)();
+			
 			// @ assert (s+1) % (BlockChain.SUMMARY_INTERVAL + 1) == 0;	
 			int[] balances = b_chain.getBalances();
 			//@ open ValidSummary(balances);
 			int hash_previous = b_chain.headHash();	
 					
-			//@ close [q]CBlockchain_shared_state(this)();
+			//@ close [q2]CBlockchain_shared_state(this)();
 			mon.readUnlock();
 					
 			int nonce = SummaryBlock.mine(hash_previous, balances, Util.randomInt());
 					
 			mon.writeLock();
-			
 	    		//@ open CBlockchain_shared_state(this)();
-	    		if(hash_previous == b_chain.headHash() && b_chain.isNextSummary())
+	    		if(hash_previous == b_chain.headHash() && b_chain.isNextSummary()) {
 				b_chain.appendSummary(hash_previous, nonce, balances);
+				isNextSummary = false;
+			}
 			//@ close CBlockchain_shared_state(this)();
 			mon.writeUnlock();
 			
+			if(isNextSummary) {
+				mon.readLock();
+			    	//@ open [?q3]CBlockchain_shared_state(this)();
+				isNextSummary = b_chain.isNextSummary();
+				//@ close [q3]CBlockchain_shared_state(this)();
+				mon.readUnlock();
+			}
 			
-			mon.readLock();
-			//@ open [?q2]CBlockchain_shared_state(this)();
+			
+			//mon.readLock();
+			// @ open [?q2]CBlockchain_shared_state(this)();
 			
 			// @ assert this.head |-> ?b;
 			// @ close BlockchainInv(b, _, s+2, conc(conc(c, _), b));
@@ -500,8 +512,8 @@ final class CBlockChain {
 			// @ close BlockchainInv(b, _, s+1, conc(c, b));
 		// }
 				
-		//@ close CBlockchain_shared_state(this)();
-		mon.readUnlock();
+		// @ close CBlockchain_shared_state(this)();
+		//mon.readUnlock();
 	}
 	
 	public boolean appendBlock(Transaction[] ts) 
@@ -512,28 +524,27 @@ final class CBlockChain {
 	{
 		appendSummary();
 		
-		mon.lock();
-	    	//@ open CBlockchain_shared_state(this)();
+		mon.readLock();
+	    	//@ open [?q1]CBlockchain_shared_state(this)();
 		boolean valid = b_chain.validTransactions(ts);
+		int hash_previous = b_chain.headHash();
+		//@ close [q1]CBlockchain_shared_state(this)();
+		mon.readUnlock();
 		
 		if(valid) {
-			int hash_previous = b_chain.headHash();
-			//@ close CBlockchain_shared_state(this)();
-			mon.unlock();
-			
 			//@ open ValidSimple(ts, elms, vls);
 			int nonce = SimpleBlock.mine(hash_previous, ts, 0);
 			
 			boolean status = false;
-			mon.lock();
+			mon.writeLock();
 	    		//@ open CBlockchain_shared_state(this)();
 	    		if(b_chain.headHash() == hash_previous && !b_chain.isNextSummary()) { // It is still valid
 	    			//@ assert ValidTransactions(ts, hash_previous);
 				status = b_chain.appendSimple(hash_previous, nonce, ts);
 			}
 			//@ close CBlockchain_shared_state(this)();
-			mon.unlock();
-	
+			mon.writeUnlock();
+			
 			if(status) {
 				appendSummary();
 				
@@ -542,8 +553,8 @@ final class CBlockChain {
 				// @ close ValidSimple(ts, elms, vls);
 			}
 		} else {
-			//@ close CBlockchain_shared_state(this)();
-			mon.unlock();
+			// @ close CBlockchain_shared_state(this)();
+			//mon.unlock();
 		}
 		
 		return false;

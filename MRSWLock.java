@@ -11,8 +11,8 @@ import java.util.concurrent.locks.*;
 /*@
 	predicate dummy() = true;
 
-	predicate enter_mrswlck(real p, predicate() inv) = inv();
-	predicate mrswlck(MRSWLock s; real p, predicate() inv) = s.p_ |-> p &*& inv == dummy; // the body is just to be considered a valid predicate
+	//predicate enter_mrswlck(real p, predicate() inv) = inv();
+	//predicate mrswlck(Object s; real p, predicate() inv) = p == 1 &*& inv == dummy; // the body is just to be considered a valid predicate
 
 	predicate_ctor MRSWLock_shared_state(MRSWLock ml) () = 
 			    ml.readercount |-> ?r
@@ -53,8 +53,6 @@ class MRSWLock {
 	private Condition OKtoread;
 	private Condition OKtowrite;
 	
-	//@ real p_;
-
 	public MRSWLock() 
 	//@ requires enter_mrswlck(1,?inv);
 	//@ ensures [1]MRSWLockInv(this) &*& mrswlck(this, 1, inv);
@@ -70,7 +68,7 @@ class MRSWLock {
 		OKtowrite = mon.newCondition();
     		//@ close MRSWLockInv(this);
     		
-    		//@ close mrswlck(this, 1, inv) ;
+    		//@ close_mrswlck(this, 1, inv, 1);
 	}
 	
 	/* 
@@ -116,7 +114,7 @@ class MRSWLock {
     		mon.unlock();
     		//@ close [f]MRSWLockInv(this);
     		
-    		//@ close [f2]mrswlck(this, -p, inv);
+    		//@ close_mrswlck(this, -p, inv, f2);
     		//@ assume_predicate(inv, 1/2);
 	}
 	
@@ -144,7 +142,7 @@ class MRSWLock {
 		mon.unlock();
     		//@ close [f]MRSWLockInv(this);
     		
-    		//@ close [f2]mrswlck(this, -p, inv);
+    		//@ close_mrswlck(this, -p, inv, f2);
 	}
 	
 	/*
@@ -189,7 +187,7 @@ class MRSWLock {
 		mon.unlock();
     		//@ close [f]MRSWLockInv(this);
     		
-    		//@ close [f2]mrswlck(this, 0, inv);
+    		//@ close_mrswlck(this, 0, inv, f2);
     		//@ assume_predicate(inv, 1);
 	}
 
@@ -212,6 +210,6 @@ class MRSWLock {
 		mon.unlock();
     		//@ close [f]MRSWLockInv(this);
     		
-    		//@ close [f2]mrswlck(this, 1, inv);
+    		//@ close_mrswlck(this, 1, inv, f2);
 	}
 }
