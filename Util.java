@@ -1,22 +1,21 @@
 import java.time.format.*;
 import java.time.LocalDateTime;
 
-//import java.util.Random;
-
-//import verifast.internal.*;
 import java.util.*;
 
 public class Util {
 
     public static String time() 
     //@ requires true;
-    //@ ensures true;
+    //@ ensures result != null;
     {
         LocalDateTime t = LocalDateTime.now();
         DateTimeFormatter f = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-        if(f!=null)
-            return f.format(t);
-        else
+        
+        if( f!=null ) {
+            String s = f.format(t);
+            return s != null ? s : "";
+        } else
             return "";
     }
 

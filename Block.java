@@ -44,14 +44,10 @@ Note: please add your names and student numbers in all files you submit.
 /* These are the predicates defining representation invariants for the blockchain blocks and transactions. */
 
 /*@
-	//predicate isBlockchain(Blockchain b;) = b == null ? emp : b.head |-> ?l &*& isBlock(l,_);
 
 	predicate isBlock(Block b;int h) = b == null ? h == 0 : b.BlockInv(_, _, h, _);
 
 	predicate TransHash(unit a, Transaction t; int hash) = (t == null) ? (emp &*& hash == 0) : (TransInv(t, ?s, ?r, ?v) &*& hash == tansactionHash(s,r,v));
-	//	    t != null
-	//	&*& TransInv(t, ?s, ?r, ?v)
-	//	&*& hash == tansactionHash(s,r,v);
 
 	fixpoint boolean ValidID(int id) {
 		return 0 <= id && id < Block.MAX_ID;

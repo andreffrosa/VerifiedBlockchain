@@ -2,13 +2,14 @@
 
 public final class Producer implements Runnable {
 
-	public static final int MAX_SLEEP = 50;
 	public static final int TRANSFERENCE_FACTOR = 15; 
 	
 	/*@
 	
 	predicate ProducerInv() = this.queue |-> ?q 
 			      &*& this.b_chain |-> ?bc
+			      &*& this.max_sleep |-> ?s
+			      &*& s >= 0
 			      &*& [_]isCQueue(q)
 			      &*& [_]isCBlockchain(bc);
 	
@@ -20,13 +21,15 @@ public final class Producer implements Runnable {
 	
 	private CQueue queue;
 	private CBlockChain b_chain;
+	private int max_sleep;
 
-	public Producer(CQueue queue, CBlockChain b_chain) 
-	//@ requires b_chain_frac(?bf) &*& [bf]isCBlockchain(b_chain) &*& queue_frac(?qf) &*& [qf]isCQueue(queue);
+	public Producer(CQueue queue, CBlockChain b_chain, int max_sleep) 
+	//@ requires b_chain_frac(?bf) &*& [bf]isCBlockchain(b_chain) &*& queue_frac(?qf) &*& [qf]isCQueue(queue) &*& max_sleep >= 0;
 	//@ ensures pre();
 	{
 		this.queue = queue;
 		this.b_chain = b_chain;
+		this.max_sleep = max_sleep;
 		//@ close pre();
 	}
 	
@@ -42,9 +45,7 @@ public final class Producer implements Runnable {
 		}
 	}
 
-	public void produce(/*CQueue queue, BlockChain b_chain*/) 
-	// @ requires isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue) &*& [_]System.out |-> ?o &*& o != null;
-	// @ ensures isBlockchain(b_chain) &*& queue != null &*& CQueueInv(queue) &*& o != null;
+	public void produce() 
 	//@ requires ProducerInv();
 	//@ ensures ProducerInv();
 	{
@@ -65,7 +66,7 @@ public final class Producer implements Runnable {
 			//@ open isCQueue(queue);
 			queue.enqueue( new Transaction(sender, receiver, amount) );
 				
-			try{ Thread.sleep( Util.randomInt(0, MAX_SLEEP) ); } catch(InterruptedException e) {}
+			try{ Thread.sleep( Util.randomInt(0, this.max_sleep) ); } catch(InterruptedException e) {}
 		}
 	}
 

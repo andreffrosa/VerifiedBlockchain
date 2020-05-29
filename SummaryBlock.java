@@ -23,7 +23,6 @@ Note: please add your names and student numbers in all files you submit.
 	predicate Positive(unit a, int v; int n) = v >= 0 &*& n == v;
 	
 	predicate ValidSummary(int[] b;) = b != null &*& b.length == Block.MAX_ID;
-							//&*& array_slice_deep(b, 0, b.length, Positive, unit, ?elems, vls);
 @*/
 
 final class SummaryBlock implements Block {
@@ -138,7 +137,6 @@ final class SummaryBlock implements Block {
 		int balHash = 0;
 		int i = 0;
 
-		// assert array_slice(balances, 0, balances.length, ?items);
 		while(i < balances.length)
 		/*@ invariant 0 <= i &*& i <= balances.length
 			&*& array_slice(balances, 0, balances.length, items)
@@ -168,16 +166,5 @@ final class SummaryBlock implements Block {
 		//@ close ValidNonce(r, hp, sum(items));
 		return r;
 	}
-
-	/*public void mine()
-    	//@ requires BlockInv(?p, ?hp, ?h, ?r); // &*& cond != null;
-    	//@ ensures BlockInv(p, hp, ?h2, ?r2) &*& (h2 % 100 == 0);
-	{
-		while( this.hash() % 100 != 0 ) 
-		//@ invariant BlockInv(p, hp, _, _);
-		{
-			this.random++;
-		}
-	}*/
 
 }
