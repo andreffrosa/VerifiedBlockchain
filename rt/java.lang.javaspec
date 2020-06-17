@@ -266,6 +266,10 @@ public class Integer {
         //@ ensures result == Integer_intValue(this);
         //@ terminates;
     
+    public static String toString(int v);
+        //@ requires true;
+        //@ ensures result != null;
+        //@ terminates;
 }
 
 //@ fixpoint boolean Boolean_booleanValue(Boolean b);
@@ -283,6 +287,15 @@ public class Boolean {
     public boolean booleanValue();
         //@ requires true;
         //@ ensures result == Boolean_booleanValue(this);
+        
+    public static boolean parseBoolean(String s);
+    	//@ requires s != null;
+    	//@ ensures true;
+    	
+    public static String toString(boolean b);
+        //@ requires true;
+        //@ ensures result != null;
+        //@ terminates;
 }
 
 /*@
@@ -367,6 +380,10 @@ public class System {
         //@ requires arraycopy_pre(?type, ?overlap, ?frac, src, srcPos, length, ?elems, dest, destPos);
         //@ ensures arraycopy_post(type, overlap, frac, src, srcPos, length, elems, dest, destPos);
     
+    public static void exit(int status);
+        //@ requires true;
+        //@ ensures true;
+    
 }
 
 //@ fixpoint list<char> charsOfString(String s);
@@ -449,7 +466,7 @@ public class Thread {
         //@ ensures Thread(r, false);
         
     static void sleep(int millis);
-        //@ requires true;
+        //@ requires millis >= 0;
         //@ ensures true;
     
 }

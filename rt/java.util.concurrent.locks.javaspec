@@ -2,6 +2,24 @@ package java.util.concurrent.locks;
 
 /*@
 
+predicate enter_mrswlck(real p, predicate() inv) = inv();
+predicate mrswlck<T>(T s; real p, predicate() inv);
+
+lemma void close_mrswlck<T>(T s);
+   requires [?f]enter_mrswlck(?p, ?inv);
+   ensures [f]mrswlck(s, p, inv);
+
+lemma void mrswlck_lock<T>(T s, real p1, real p2, real q);
+   requires [?f]mrswlck(s, p1, ?inv);
+   ensures [f]mrswlck(s, p2, inv) &*& [q]inv();
+
+lemma void mrswlck_unlock<T>(T s, real p1, real p2, real q);
+   requires [?f]mrswlck(s, p1, ?inv) &*& [q]inv();
+   ensures [f]mrswlck(s, p2, inv);
+
+
+
+
 predicate enter_lck(real p, predicate() inv) = inv() ;
 predicate lck(Lock s; real p, predicate() inv);
 predicate set_cond(predicate() inv, predicate() p) = true;
@@ -12,8 +30,9 @@ predicate rwlck(ReentrantReadWriteLock s; predicate() inv);
 predicate rlck(Lock s; real p, predicate() inv);
 predicate wlck(Lock s; real p, predicate() inv);
 
-
 @*/
+
+
 
 public interface Lock {
 

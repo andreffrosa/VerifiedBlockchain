@@ -6,4 +6,8 @@ lemma void assume(boolean b);
     requires true;
     ensures b;
 
+lemma void assume_predicate(predicate() p, real f);
+    requires true;
+    ensures [f]p();
+
 @*/
