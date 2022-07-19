@@ -2,8 +2,6 @@
 
 public final class Worker implements Runnable {
 	
-	public static final int MAX_RETRIES = 10; 
-
 	/*@
 	
 	predicate WorkerInv() = this.queue |-> ?q 

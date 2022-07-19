@@ -12,6 +12,7 @@ predicate NotNull(unit a, String t; unit b) = (t != null) &*& b == unit;
 
 public class Main {
 
+    // Default configuration values
     public static final int INITIAL_BALANCE = 100;
 
     public static final int QUEUE_SIZE = 300;
@@ -72,7 +73,7 @@ public class Main {
 						System.exit(-1);
 					}
 				}
-				else if(args[i].equals("-p"))
+				else if(args[i].equals("-t"))
 					print_sleep_interval = Integer.parseInt(args[i+1]);
         	}
         }

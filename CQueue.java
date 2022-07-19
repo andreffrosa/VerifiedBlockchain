@@ -2,6 +2,8 @@ import java.util.concurrent.locks.*;
 
 /*@
 
+  predicate TransInv(Transaction t; int s,  int r, int v) = t != null &*& s == 0 &*& r == 0 &*& v == 0; // dummy
+
   predicate P(unit a, Transaction t; unit b) = t != null &*& TransInv(t, ?s, ?r, ?v) &*& b == unit;
 
   predicate QueueInv(Queue q, predicate(unit, Transaction;unit) p; int n, int m) = 
@@ -33,6 +35,8 @@ import java.util.concurrent.locks.*;
     &*& (h < t  ? n == h - t + a.length : true)
     ;
 @*/
+
+class Transaction {} // dummy
 
 class Queue {
 
@@ -139,6 +143,7 @@ class CQueue {
   //@ ensures [f]CQueueInv(this);
   {
     mon.lock();
+    
     //@ open CQueue_shared_state(this)();
     while( q.isFull() )
     /*@ invariant this.q |-> ?cq 
@@ -149,7 +154,7 @@ class CQueue {
 	      &*& l != null
 	      &*& ce != null
 	      &*& cf != null
-              &*& QueueInv(cq,P,_,_)
+              &*& QueueInv(cq,P,?n,?m)
               &*& [f]lck(l, -1, CQueue_shared_state(this))
               &*& [f]cond(ce, CQueue_shared_state(this), CQueue_nonempty(this))
               &*& [f]cond(cf, CQueue_shared_state(this), CQueue_nonfull(this));
@@ -159,7 +164,8 @@ class CQueue {
       try { notfull.await(); } catch(InterruptedException e) {}
       //@ open CQueue_nonfull(this)();
     }
-    //@ open QueueInv(q,_,_,_);
+    //@ open QueueInv(cq,P,n,m);
+    //@ assert  n < m;
     q.enqueue(t);
     //@ close CQueue_nonempty(this)();
     notempty.signal();

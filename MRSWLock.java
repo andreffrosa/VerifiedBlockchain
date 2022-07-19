@@ -9,6 +9,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 
 /*@
+	predicate_ctor dummmy_pred_ctor()() = emp;
+	
 	predicate_ctor MRSWLock_shared_state(MRSWLock ml) () = 
 			    ml.readercount |-> ?r
 			&*& ml.busy |-> ?b 
@@ -37,6 +39,17 @@ import java.util.concurrent.locks.*;
 			&*& lck(l, 1, MRSWLock_shared_state(ml))
 			&*& cond(cr, MRSWLock_shared_state(ml), MRSWLock_Oktoread(ml))
                         &*& cond(cw, MRSWLock_shared_state(ml), MRSWLock_Oktowrite(ml));
+                        
+        predicate MRSWLockInv_InReadLock(MRSWLock ml;) =
+			    ml.mon |-> ?l
+			&*& ml.OKtoread |-> ?cr
+			&*& ml.OKtowrite |-> ?cw
+			&*& l != null
+			&*& cr != null
+			&*& cw != null
+			&*& lck(l, 1, MRSWLock_shared_state(ml))
+			&*& cond(cr, MRSWLock_shared_state(ml), MRSWLock_Oktoread(ml))
+                        &*& cond(cw, MRSWLock_shared_state(ml), MRSWLock_Oktowrite(ml));
 		
 @*/
 
@@ -47,6 +60,8 @@ class MRSWLock {
 	private ReentrantLock mon;
 	private Condition OKtoread;
 	private Condition OKtowrite;
+	
+	//@ private boolean in_read_lock;
 	
 	public MRSWLock() 
 	//@ requires enter_mrswlck(1,?inv);
@@ -63,6 +78,8 @@ class MRSWLock {
 		OKtowrite = mon.newCondition();
     		//@ close MRSWLockInv(this);
     		
+    		//@ in_read_lock = false;
+    		
     		//@ close_mrswlck(this);
 	}
 	
@@ -73,7 +90,7 @@ class MRSWLock {
 	 */
 	public void readLock() 
 	//@ requires [?f]MRSWLockInv(this) &*& [?f2]mrswlck(this, ?p, ?inv);
-	//@ ensures [f]MRSWLockInv(this) &*& [f2]mrswlck(this, -p, inv) &*& [?q]inv() &*& q < 1;
+	//@ ensures [f]MRSWLockInv_InReadLock(this) &*& [f2]mrswlck(this, -p, inv) &*& [?q]inv() &*& q < 1;
 	{
 		//@ open MRSWLockInv(this);
 		mon.lock();
@@ -104,10 +121,12 @@ class MRSWLock {
 			
 		readercount = readercount + 1;
 		
+		// @ this.in_read_lock = true;
+		
 		//@ close MRSWLock_Oktoread(this)();
 		OKtoread.signal();
     		mon.unlock();
-    		//@ close [f]MRSWLockInv(this);
+    		//@ close [f]MRSWLockInv_InReadLock(this);
     		
     		//@ mrswlck_lock(this, p, -p, 1/2);
 	}
@@ -116,10 +135,10 @@ class MRSWLock {
 	 * Releases the reading lock.
 	 */
 	void readUnlock() 
-	//@ requires [?f]MRSWLockInv(this) &*& [?f2]mrswlck(this, ?p, ?inv) &*& [?q]inv();
+	//@ requires [?f]MRSWLockInv_InReadLock(this) &*& [?f2]mrswlck(this, ?p, ?inv) &*& [?q]inv();
 	//@ ensures [f]MRSWLockInv(this) &*& [f2]mrswlck(this, -p, inv);
 	{
-		//@ open MRSWLockInv(this);
+		//@ open MRSWLockInv_InReadLock(this);
 		mon.lock();
     		//@ open MRSWLock_shared_state(this)();
     		
@@ -205,4 +224,21 @@ class MRSWLock {
     		
     		//@ mrswlck_lock(this, 0, 1, 1);
 	}
+	
+	
+	
+	public static void main(String[] args) 
+	//@ requires true;
+	//@ ensures true;
+	{
+		//@ close dummmy_pred_ctor()();
+		//@ close enter_mrswlck(1, dummmy_pred_ctor());
+		MRSWLock mon = new MRSWLock();
+		mon.readLock();
+		//mon.writeLock();
+		mon.readUnlock();
+	}
+	
 }
+
+
